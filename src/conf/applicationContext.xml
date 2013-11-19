@@ -17,16 +17,30 @@
 	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
 	<!-- <import resource="classpath:META-INF/cxf/cxf-extension-jaxrs-binding.xml" 
 		/> -->
-	<bean id="binlogServiceImpl" class="cn.ce.web.rest.impl.BinlogServiceImpl" />
-
 	<bean id="cxf.default.workqueue" class="org.apache.cxf.workqueue.AutomaticWorkQueueImpl">
 		<property name="name" value="default" />
 		<property name="queueSize" value="512" />
 	</bean>
 
+	<bean id="binlogPBootStrap" class="cn.ce.binlog.session.BinlogPBootStrap" />
+	<bean id="binlogServiceImpl" class="cn.ce.web.rest.impl.BinlogServiceImpl" />
+
 	<jaxrs:server id="binlogService" address="/binlog">
 		<jaxrs:serviceBeans>
 			<ref bean="binlogServiceImpl" />
+		</jaxrs:serviceBeans>
+		<jaxrs:extensionMappings>
+			<entry key="json" value="application/json" />
+			<entry key="xml" value="application/xml" />
+		</jaxrs:extensionMappings>
+	</jaxrs:server>
+
+
+	<bean id="oplogServiceImpl" class="cn.ce.web.rest.impl.OplogServiceImpl" />
+
+	<jaxrs:server id="oplogService" address="/oplog">
+		<jaxrs:serviceBeans>
+			<ref bean="oplogServiceImpl" />
 		</jaxrs:serviceBeans>
 		<jaxrs:extensionMappings>
 			<entry key="json" value="application/json" />

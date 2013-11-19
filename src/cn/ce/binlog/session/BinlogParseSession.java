@@ -7,6 +7,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
+import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.FormatDescriptionLogEvent;
 import cn.ce.binlog.mysql.event.TableMapLogEvent;
 import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
@@ -20,7 +21,10 @@ public class BinlogParseSession {
 	private TableMetaCache tableMetaCache;
 	private long slaveId;
 	private MysqlConnector c;
-	private final LinkedBlockingQueue<BinlogDumpResPacket> binlogDumpResPacketQueue = new LinkedBlockingQueue<BinlogDumpResPacket>(
+//	private final LinkedBlockingQueue<BinlogDumpResPacket> binlogDumpResPacketQueue = new LinkedBlockingQueue<BinlogDumpResPacket>(
+//			200);
+
+	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
 			200);
 
 	public final BinlogPosition getLogPosition() {
@@ -37,17 +41,29 @@ public class BinlogParseSession {
 		this.logPosition = logPosition;
 	}
 
-	public void addBinlogDumpResPacket(BinlogDumpResPacket binlogDumpResPacket) {
-		binlogDumpResPacketQueue.offer(binlogDumpResPacket);
+//	public void addBinlogDumpResPacket(BinlogDumpResPacket binlogDumpResPacket) {
+//		binlogDumpResPacketQueue.offer(binlogDumpResPacket);
+//	}
+//
+//	public int getBinlogDumpResPacketQueueSize() {
+//		return binlogDumpResPacketQueue.size();
+//	}
+//
+//	public BinlogDumpResPacket getBinlogDumpResPacket()
+//			throws InterruptedException {
+//		return binlogDumpResPacketQueue.take();
+//	}
+
+	public int getEventVOQueueSize() {
+		return eventVOQueue.size();
 	}
 
-	public int getBinlogDumpResPacketQueueSize() {
-		return binlogDumpResPacketQueue.size();
+	public void addEventVOQueue(BinlogEvent binlogEvent) {
+		eventVOQueue.offer(binlogEvent);
 	}
 
-	public BinlogDumpResPacket getBinlogDumpResPacket()
-			throws InterruptedException {
-		return binlogDumpResPacketQueue.take();
+	public BinlogEvent getEventVOQueue() throws InterruptedException {
+		return eventVOQueue.take();
 	}
 
 	public FormatDescriptionLogEvent getDescription() {

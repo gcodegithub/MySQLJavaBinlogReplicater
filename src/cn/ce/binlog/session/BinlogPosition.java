@@ -108,6 +108,16 @@ public class BinlogPosition implements Cloneable, Comparable<BinlogPosition> {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((fileName == null) ? 0 : fileName.hashCode());
+		result = prime * result + (int) (position ^ (position >>> 32));
+		return result;
+	}
+
+	@Override
 	public String toString() {
 		String s = ToStringBuilder.reflectionToString(this,
 				ToStringStyle.MULTI_LINE_STYLE);

@@ -3,8 +3,6 @@ package cn.ce.binlog.mysql.parse;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -99,7 +97,8 @@ public class MySQLDumper {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			c.disconnect();
+			if (c != null)
+				c.disconnect();
 		}
 		System.out.println("--------OVER---------");
 	}

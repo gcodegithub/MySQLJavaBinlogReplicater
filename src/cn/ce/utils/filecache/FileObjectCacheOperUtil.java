@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,7 +28,7 @@ public class FileObjectCacheOperUtil {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		} finally {
-			bo.close();
+			IOUtils.closeQuietly(bo);
 		}
 		// 校验是否文件写入到磁盘
 		File savedFile = new File(fullPath);
@@ -64,7 +66,7 @@ public class FileObjectCacheOperUtil {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		} finally {
-			bi.close();
+			IOUtils.closeQuietly(bi);
 		}
 		if (fileObject == null) {
 			throw new Exception("无法从文件：" + fullPath + "中打开输入流，检查文件是否存在、文件权限等！");

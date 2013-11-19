@@ -64,6 +64,6 @@ public class HeaderPacket implements IPacket {
 		HeaderPacket hp = new HeaderPacket();
 		hp.setPacketBodyLength(length);
 		byte[] len = hp.toBytes();// 低位[1, 2, 3, 0]高位
-		System.out.println(len);
+//		System.out.println(len);
 	}
 }

@@ -6,10 +6,31 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import cn.ce.utils.common.BeanUtil;
-
+import cn.ce.utils.common.ProFileUtil;
 
 public class Alarm {
 	private static final Log logger = LogFactory.getLog(Alarm.class);
+
+	// 发送报警邮件
+	public static void sendAlarmEmail(String sysconfigFileClasspath,
+			String subject, String emailContent) {
+		try {
+			String smtpPort = ProFileUtil.findMsgString(sysconfigFileClasspath,
+					"all.alarm.smtpprot");
+			String smtpAdd = ProFileUtil.findMsgString(sysconfigFileClasspath,
+					"all.alarm.smtpadd");
+			String sendEmailAdd = ProFileUtil.findMsgString(
+					sysconfigFileClasspath, "all.alarm.send.email.add");
+			String sendEmailPass = ProFileUtil.findMsgString(
+					sysconfigFileClasspath, "all.alarm.send.email.pass");
+			String recEmailAddCSV = ProFileUtil.findMsgString(
+					sysconfigFileClasspath, "all.alarm.rec.email.add");
+			Alarm.sendFetalErrorEmail(smtpPort, smtpAdd, sendEmailAdd,
+					sendEmailPass, recEmailAddCSV, ",", subject, emailContent);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void sendFetalErrorEmail(String smtpPort, String smtpAdd,
 			String sendEmailAdd, String sendEmailPass, String recEmailAddCSV,

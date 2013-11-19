@@ -16,14 +16,14 @@ import org.apache.commons.lang.builder.ToStringStyle;
 
 @XmlRootElement(name = "BinParseResultVO")
 @XmlType(propOrder = { "errorMsg", "processMsg", "eventVOList",
-		"binlogfilename", "binlogPosition", "resCode" }, name = "BinParseResultVOType")
+		"binlogfilenameNext", "binlogPositionNext", "resCode" }, name = "BinParseResultVOType")
 @XmlAccessorType(value = XmlAccessType.NONE)
 public class BinParseResultVO {
 	private List<String> errorMsg = new ArrayList<String>();
 	private List<String> processMsg = new ArrayList<String>();
 	private List<EventVO> eventVOList = new ArrayList<EventVO>();
-	private String binlogfilename;
-	private Long binlogPosition;
+	private String binlogfilenameNext = "mysql-bin.000001";
+	private Long binlogPositionNext = 4L;
 	private String resCode;
 
 	@XmlElementWrapper(name = "errorMsgList")
@@ -36,22 +36,22 @@ public class BinParseResultVO {
 		this.errorMsg.add(errorMsg);
 	}
 
-	@XmlElement(name = "binlogfilename", type = String.class)
-	public String getBinlogfilename() {
-		return binlogfilename;
+	@XmlElement(name = "binlogfilenameNext", type = String.class)
+	public String getBinlogfilenameNext() {
+		return binlogfilenameNext;
 	}
 
-	public void setBinlogfilename(String binlogfilename) {
-		this.binlogfilename = binlogfilename;
+	public void setBinlogfilenameNext(String binlogfilenameNext) {
+		this.binlogfilenameNext = binlogfilenameNext;
 	}
 
-	@XmlElement(name = "binlogPosition", type = Long.class)
-	public Long getBinlogPosition() {
-		return binlogPosition;
+	@XmlElement(name = "binlogPositionNext", type = Long.class)
+	public Long getBinlogPositionNext() {
+		return binlogPositionNext;
 	}
 
-	public void setBinlogPosition(Long binlogPosition) {
-		this.binlogPosition = binlogPosition;
+	public void setBinlogPositionNext(Long binlogPositionNext) {
+		this.binlogPositionNext = binlogPositionNext;
 	}
 
 	public void setErrorMsg(List<String> errorMsg) {

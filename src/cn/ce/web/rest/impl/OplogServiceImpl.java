@@ -1,17 +1,18 @@
 package cn.ce.web.rest.impl;
 
-import org.apache.commons.lang.StringUtils;
-
-import cn.ce.binlog.mysql.conv.MySQLEventConsumer;
-import cn.ce.binlog.mysql.parse.MysqlConnector;
-import cn.ce.binlog.session.BinlogParseSession;
 import cn.ce.binlog.session.BinlogParserManager;
-import cn.ce.utils.common.ProFileUtil;
-import cn.ce.web.rest.i.IFBinlogService;
-import cn.ce.web.rest.vo.BinParseResultVO;
+import cn.ce.web.rest.i.IFOplogService;
+import cn.ce.web.rest.vo.OpEventVO;
+import cn.ce.web.rest.vo.OpParseResultVO;
 import cn.ce.web.rest.vo.TokenAuthRes;
 
-public class BinlogServiceImpl implements IFBinlogService {
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.Mongo;
+
+public class OplogServiceImpl implements IFOplogService {
 
 	public TokenAuthRes getToken(String slaveId, String tokenInput) {
 		TokenAuthRes res = new TokenAuthRes();
@@ -27,20 +28,25 @@ public class BinlogServiceImpl implements IFBinlogService {
 		return res;
 	}
 
-	public BinParseResultVO getDump(Long slaveId, String binlogfilename,
-			String binlogPosition, String serverhost, Integer serverPort,
-			String username, String password, String tokenInput) {
-		BinParseResultVO resVO = new BinParseResultVO();
-		BinlogParseSession bps = new BinlogParseSession();
-		MysqlConnector c = new MysqlConnector(serverhost, serverPort, username,
-				password);
+	public OpParseResultVO getDump(String slaveId, String binlogfilename,
+			String serverhost, String serverPort, String username,
+			String password, String tokenInput) {
+		OpParseResultVO resVO = new OpParseResultVO();
 		try {
-			BinlogParserManager.auth(slaveId, tokenInput);
-			BinlogParserManager.startDumpToSession(slaveId, binlogfilename,
-					binlogPosition, c, bps, resVO);
-			boolean isNeedWait = true;
-			BinlogParserManager.getVOFromSession(resVO, slaveId, isNeedWait);
-			BinlogParserManager.saveCheckPoint(resVO, slaveId);
+			Mongo mongo = new Mongo(serverhost, new Integer(serverPort));
+
+			DB db = mongo.getDB("local");
+			DBCollection collection = db.getCollection("oplog.$main");
+			BasicDBObject search = new BasicDBObject();
+			search.put("op", new BasicDBObject("$ne", "n"));
+
+			DBCursor cursor = collection.find(search);
+			while (cursor.hasNext()) {
+				OpEventVO eventVO = new OpEventVO();
+				eventVO.setOneRec(cursor.next().toString());
+				resVO.addEventVOList(eventVO);
+			}
+
 		} catch (Throwable ex) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Error,msg:");
@@ -62,10 +68,8 @@ public class BinlogServiceImpl implements IFBinlogService {
 			resVO.addErrorMsg(sb.toString());
 			resVO.setResCode(TokenAuthRes.ERROR);
 			ex.printStackTrace();
-		} finally {
-			c.disconnect();
-			BinlogParserManager.sessionMap.remove(slaveId);
 		}
 		return resVO;
 	}
+
 }

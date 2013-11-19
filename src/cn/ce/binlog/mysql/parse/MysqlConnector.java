@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,7 +18,7 @@ import cn.ce.binlog.mysql.query.MysqlQueryExecutor;
 import cn.ce.binlog.mysql.query.MysqlUpdateExecutor;
 import cn.ce.binlog.mysql.util.ReadWriteUtil;
 
-public class MysqlConnector {
+public class MysqlConnector implements Cloneable {
 	private final static Log logger = LogFactory.getLog(MysqlConnector.class);
 
 	private InetSocketAddress address;
@@ -208,7 +207,8 @@ public class MysqlConnector {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
-			c.disconnect();
+			if (c != null)
+				c.disconnect();
 		}
 		System.out.println("--------OVER---------");
 	}

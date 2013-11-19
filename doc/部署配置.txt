@@ -8,6 +8,13 @@ expire_logs_days	= 1095
 max_binlog_size         = 10240M
 
 
+
+conf/sysconfig.properties配置文件
+ALARM EMAIL需要配置
+实时监控多master主库需要配置
+bootstrap.mysql.vo.filepool.dir需要配置replaylog路径
+
+
 Tomcat设置
 <Context path="/expert" docBase="expert" debug="0" reloadable="false">
 

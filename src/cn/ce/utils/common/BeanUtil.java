@@ -57,6 +57,9 @@ public class BeanUtil {
 
 					e.printStackTrace();
 				}
+				if (res1 == null || res2 == null) {
+					throw new RuntimeException("无法进行比较");
+				}
 				Integer resInt1 = Integer.valueOf(res1);
 				Integer resInt2 = Integer.valueOf(res2);
 				return resInt1 - resInt2;

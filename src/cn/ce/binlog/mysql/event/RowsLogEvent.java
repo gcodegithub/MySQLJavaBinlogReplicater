@@ -219,7 +219,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 				throw new Exception("not found tableId:" + this.getTableId());
 			}
 			String fullname = table.getDbName() + "." + table.getTableName();
-			long tableId = this.getTableId();
+//			long tableId = this.getTableId();
 
 			RowsLogBuffer buffer = this.getRowsBuf(charset.name());
 			BitSet columns = this.getColumns();

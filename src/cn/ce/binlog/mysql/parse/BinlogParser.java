@@ -31,19 +31,19 @@ public class BinlogParser {
 		try {
 			nc.connect();
 			MySQLDumper.sendBinlogDump(c, parseSession);
-			
+
 			while (c.isConnected()) {
 				TableMetaCache tableMetaCache = new TableMetaCache(nc);
 				BinlogDumpResPacket dumpResPackage = MySQLDumper
 						.receiveBinlogDump(c, parseSession);
 				parseSession.setTableMetaCache(tableMetaCache);
-				parseSession.addBinlogDumpResPacket(dumpResPackage);
+//				parseSession.addBinlogDumpResPacket(dumpResPackage);
 				logger.info(" ######################## log filename : "
 						+ parseSession.getLogPosition().getFileName()
 						+ " pos : "
 						+ parseSession.getLogPosition().getPosition());
 			}
-		}  finally {
+		} finally {
 			logger.info("-----------断开链接---------------");
 			c.disconnect();
 			nc.disconnect();
@@ -66,7 +66,8 @@ public class BinlogParser {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		} finally {
-			c.disconnect();
+			if (c != null)
+				c.disconnect();
 		}
 		System.out.println("--------OVER---------");
 	}

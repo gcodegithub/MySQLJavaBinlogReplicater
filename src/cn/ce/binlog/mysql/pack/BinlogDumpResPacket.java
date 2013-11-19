@@ -25,7 +25,8 @@ public class BinlogDumpResPacket {
 
 	private HeaderPacket header;
 	private byte[] binlogDumpBody;
-	private List<BinlogEvent> BinlogEventList = new ArrayList<BinlogEvent>();
+
+	// private List<BinlogEvent> BinlogEventList = new ArrayList<BinlogEvent>();
 
 	public BinlogDumpResPacket(HeaderPacket header, byte[] binlogDumpBody) {
 		this.header = header;
@@ -33,9 +34,9 @@ public class BinlogDumpResPacket {
 
 	}
 
-	public List<BinlogEvent> getBinlogEventList() {
-		return BinlogEventList;
-	}
+	// public List<BinlogEvent> getBinlogEventList() {
+	// return BinlogEventList;
+	// }
 
 	public void genEvent(BinlogParseSession session) throws Exception {
 		// 无符号数
@@ -103,9 +104,9 @@ public class BinlogDumpResPacket {
 				logger.info("没有event body，只有event head");
 			}
 			pos = pos + eventLen;
-			BinlogEvent event = BinlogEvent.buildEvent(eventHeader,
+			BinlogEvent binlogEvent = BinlogEvent.buildEvent(eventHeader,
 					oneEventAll, session);
-			BinlogEventList.add(event);
+			session.addEventVOQueue(binlogEvent);
 			if (eventHeaderLen != eventLen) {
 				logger.info("event body is not null");
 				break;

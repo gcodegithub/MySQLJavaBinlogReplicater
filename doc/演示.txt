@@ -2,6 +2,14 @@
 借鉴了canal部分代码
 
 
+部署配置好环境
+
+
+
+-------------------------增量文件演示
+增量在conf/sysconfig.properties配置文件的bootstrap.mysql.vo.filepool.dir配置文件夹下生成文件
+
+
 -------------------------CXF REST演示
 slaveId首次注册
 http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/getToken.json?slaveId=111
@@ -264,5 +272,12 @@ http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/getDump.xml?sl
 	<binlogPosition>107</binlogPosition>
 </BinParseResultVO>
 
--------------------------JAVA演示
-运行BinlogParser类
+-------------------------MongoDB演示
+slaveId首次注册
+http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/getToken.json?slaveId=111
+返回
+{"TokenAuthRes":{"msgDetail":"first visit,generate new token.","newToken":1384219423587,"resCode":"NEW_TOKEN"}}
+
+第二次
+
+http://localhost:8080/MySQLJavaBinlogReplicater/webservice/oplog/getDump.xml?slaveId=111&tokenInput=1384221380644&binlogPosition=107&binlogfilename=mysql-bin.000001&serverPort=3306&serverhost=192.168.215.1&username=canal&password=canal
