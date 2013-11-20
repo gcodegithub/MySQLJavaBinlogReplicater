@@ -10,6 +10,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.FormatDescriptionLogEvent;
 import cn.ce.binlog.mysql.event.TableMapLogEvent;
+import cn.ce.binlog.mysql.event.XidLogEvent;
 import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.binlog.mysql.query.TableMetaCache;
@@ -21,8 +22,8 @@ public class BinlogParseSession {
 	private TableMetaCache tableMetaCache;
 	private long slaveId;
 	private MysqlConnector c;
-//	private final LinkedBlockingQueue<BinlogDumpResPacket> binlogDumpResPacketQueue = new LinkedBlockingQueue<BinlogDumpResPacket>(
-//			200);
+	private Thread parseThread;
+	private Thread consumerThread;
 
 	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
 			200);
@@ -41,25 +42,17 @@ public class BinlogParseSession {
 		this.logPosition = logPosition;
 	}
 
-//	public void addBinlogDumpResPacket(BinlogDumpResPacket binlogDumpResPacket) {
-//		binlogDumpResPacketQueue.offer(binlogDumpResPacket);
-//	}
-//
-//	public int getBinlogDumpResPacketQueueSize() {
-//		return binlogDumpResPacketQueue.size();
-//	}
-//
-//	public BinlogDumpResPacket getBinlogDumpResPacket()
-//			throws InterruptedException {
-//		return binlogDumpResPacketQueue.take();
-//	}
-
 	public int getEventVOQueueSize() {
 		return eventVOQueue.size();
 	}
 
 	public void addEventVOQueue(BinlogEvent binlogEvent) {
 		eventVOQueue.offer(binlogEvent);
+		if (binlogEvent instanceof XidLogEvent) {
+			if (this.consumerThread.isInterrupted() == false) {
+				this.consumerThread.interrupt();
+			}
+		}
 	}
 
 	public BinlogEvent getEventVOQueue() throws InterruptedException {
@@ -99,7 +92,7 @@ public class BinlogParseSession {
 		this.tableMetaCache = tableMetaCache;
 	}
 
-	public long getSlaveId() {
+	public Long getSlaveId() {
 		return slaveId;
 	}
 
@@ -120,6 +113,22 @@ public class BinlogParseSession {
 		String s = ToStringBuilder.reflectionToString(this,
 				ToStringStyle.MULTI_LINE_STYLE);
 		return s;
+	}
+
+	public Thread getParseThread() {
+		return parseThread;
+	}
+
+	public void setParseThread(Thread parseThread) {
+		this.parseThread = parseThread;
+	}
+
+	public Thread getConsumerThread() {
+		return consumerThread;
+	}
+
+	public void setConsumerThread(Thread consumerThread) {
+		this.consumerThread = consumerThread;
 	}
 
 }

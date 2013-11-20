@@ -64,7 +64,7 @@ public class BinlogServiceImpl implements IFBinlogService {
 			ex.printStackTrace();
 		} finally {
 			c.disconnect();
-			BinlogParserManager.sessionMap.remove(slaveId);
+			BinlogParserManager.sessionMap.remove(slaveId.toString());
 		}
 		return resVO;
 	}

@@ -10,7 +10,7 @@ public class SpringUtil implements ApplicationContextAware {
 
 	public void setApplicationContext(ApplicationContext appCtx)
 			throws BeansException {
-		SpringUtil.applicationContext = appCtx;
+		applicationContext = appCtx;
 	}
 
 	public static Object getBean(String name) {

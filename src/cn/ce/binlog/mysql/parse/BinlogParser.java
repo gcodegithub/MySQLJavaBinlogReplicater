@@ -18,7 +18,6 @@ public class BinlogParser {
 		// .println("重要：数据库必须绑定IP若更改数据库IP后需要同步更改Slave端IP设置，需要清除之前該SlaveId的對應檢查點設置文件");
 		MysqlConnector c = parseSession.getC();
 		long binlogPosition = parseSession.getLogPosition().getPosition();
-		long slaveId = parseSession.getSlaveId();
 		if (binlogPosition < 4) {
 			throw new RuntimeException(
 					"first 4 byte is 0xfe 0x62 0x69 0x6e the magic num");
@@ -27,26 +26,26 @@ public class BinlogParser {
 			c.connect();
 		}
 		MysqlConnector nc = c.clone();
-		;
 		try {
 			nc.connect();
 			MySQLDumper.sendBinlogDump(c, parseSession);
-
+			parseSession.setParseThread(Thread.currentThread());
 			while (c.isConnected()) {
 				TableMetaCache tableMetaCache = new TableMetaCache(nc);
 				BinlogDumpResPacket dumpResPackage = MySQLDumper
 						.receiveBinlogDump(c, parseSession);
 				parseSession.setTableMetaCache(tableMetaCache);
-//				parseSession.addBinlogDumpResPacket(dumpResPackage);
-				logger.info(" ######################## log filename : "
-						+ parseSession.getLogPosition().getFileName()
-						+ " pos : "
-						+ parseSession.getLogPosition().getPosition());
+				// parseSession.addBinlogDumpResPacket(dumpResPackage);
+				// logger.info(" ######################## log filename : "
+				// + parseSession.getLogPosition().getFileName()
+				// + " pos : "
+				// + parseSession.getLogPosition().getPosition());
 			}
 		} finally {
-			logger.info("-----------断开链接---------------");
+			System.out.println("-----------断开和MySQL链接---------------");
 			c.disconnect();
 			nc.disconnect();
+			parseSession.setParseThread(null);
 		}
 	}
 

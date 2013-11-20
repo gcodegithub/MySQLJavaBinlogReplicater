@@ -1,6 +1,7 @@
 package cn.ce.binlog.session;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -16,17 +17,28 @@ import cn.ce.binlog.mysql.parse.BinlogParser;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.utils.common.ProFileUtil;
 import cn.ce.utils.common.StringUtil;
+import cn.ce.utils.mail.Alarm;
 import cn.ce.web.rest.vo.BinParseResultVO;
+import cn.ce.web.rest.vo.EventVO;
 import cn.ce.web.rest.vo.TokenAuthRes;
 
 public class BinlogParserManager {
 	private final static Log logger = LogFactory
 			.getLog(BinlogParserManager.class);
 	private final static BinlogParser dao = new BinlogParser();
+	private final static MySQLEventConsumer consumerDao = new MySQLEventConsumer();
 	private final static String posFileClasspath = "conf/binlogPosClintIdMap.properties";
 	private static ExecutorService executor = Executors.newFixedThreadPool(10);
 
-	public static final ConcurrentHashMap<Long, BinlogParseSession> sessionMap = new ConcurrentHashMap<Long, BinlogParseSession>();
+	public static final ConcurrentHashMap<String, BinlogParseSession> sessionMap = new ConcurrentHashMap<String, BinlogParseSession>();
+
+	public static void save2file(MysqlConnector c, String slaveId,
+			BinlogParseSession bps, BinParseResultVO resVo) throws Throwable {
+
+		BuzzWorker worker = new BuzzWorker(bps, resVo, consumerDao, "save2File");
+		BinlogParserManager.doBuzzToExePool(worker);
+
+	}
 
 	public static void getToken(Long slaveId, TokenAuthRes res)
 			throws Exception {
@@ -66,11 +78,11 @@ public class BinlogParserManager {
 		}
 	}
 
-	public static void startDumpToSession(long slaveId, String binlogfilename,
+	public static void startDumpToSession(Long slaveId, String binlogfilename,
 			String binlogPosition, MysqlConnector c,
 			BinlogParseSession parseSession, BinParseResultVO resVo)
 			throws Throwable {
-		if (BinlogParserManager.sessionMap.containsKey(slaveId)) {
+		if (BinlogParserManager.sessionMap.containsKey(slaveId.toString())) {
 			// // one slaveId,one thread
 			throw new Exception(
 					"Error：one slaveId,one request,已经有线程正在处理该slaveId请求,slaveId="
@@ -79,7 +91,7 @@ public class BinlogParserManager {
 		logger.info("处理开始");
 		String filenameKey = slaveId + ".filenameKey";
 		String binlogPositionKey = slaveId + ".binlogPosition";
-		BinlogParserManager.sessionMap.put(slaveId, parseSession);
+		BinlogParserManager.sessionMap.put(slaveId.toString(), parseSession);
 		// 不输入检查点信息则从配置文件读取
 		if (StringUtils.isBlank(binlogfilename) || binlogPosition == null
 				|| new Long(binlogPosition) < 4) {
@@ -108,11 +120,10 @@ public class BinlogParserManager {
 
 	}
 
-	public static void getVOFromSession(BinParseResultVO resVo, long slaveId,
+	public static void getVOFromSession(BinParseResultVO resVo, Long slaveId,
 			boolean isNeedWait) throws Exception {
-		System.out.println("----------准备获取------------");
 		BinlogParseSession parseSession = BinlogParserManager.sessionMap
-				.get(slaveId);
+				.get(slaveId.toString());
 		MySQLEventConsumer.event2vo(parseSession, resVo, isNeedWait);
 		if (StringUtils.isBlank(resVo.getBinlogfilenameNext())
 				|| resVo.getBinlogPositionNext() == null) {
