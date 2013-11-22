@@ -531,6 +531,9 @@ public class BinlogEvent implements Serializable {
 	public static final int ST_BINLOG_VER_OFFSET = 0;
 	public static final int ST_SERVER_VER_OFFSET = 2;
 
+	public static final int NET_HEADER_SIZE = 4;
+	public static final int SQLSTATE_LENGTH = 5;
+
 	public static String getTypeName(final int type) {
 		switch (type) {
 		case START_EVENT_V3:

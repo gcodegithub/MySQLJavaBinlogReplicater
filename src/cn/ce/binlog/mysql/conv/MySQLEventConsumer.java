@@ -64,8 +64,8 @@ public class MySQLEventConsumer {
 			String err = e.getMessage();
 			e.printStackTrace();
 			err = "xml binlog文件持久化线程停止，原因:" + err;
-			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
-					resVo.toString());
+			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
+					+ bps.toString() + "\n" + resVo.toString());
 		} finally {
 			System.out
 					.println("---------MySQLEventConsumer持久化文件线程结束!!----------------");

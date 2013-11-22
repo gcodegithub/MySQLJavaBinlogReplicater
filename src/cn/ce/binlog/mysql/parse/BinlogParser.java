@@ -27,8 +27,8 @@ public class BinlogParser {
 		if (!c.isConnected()) {
 			c.connect();
 		}
-		
-		MysqlConnector nc =c.clone() ;
+
+		MysqlConnector nc = c.clone();
 		try {
 			nc.reconnect();
 			System.out.println("---------BinlogParser发送解析请求----------------");
@@ -38,14 +38,15 @@ public class BinlogParser {
 				TableMetaCache tableMetaCache = new TableMetaCache(nc);
 				parseSession.setTableMetaCache(tableMetaCache);
 				MySQLDumper.receiveBinlogDump(c, parseSession);
-				System.out.println("---------BinlogParser处理完一次输入包----------------");
+				System.out
+						.println("---------BinlogParser处理完一次输入包----------------");
 			}
 		} catch (Throwable e) {
 			String err = e.getMessage();
 			e.printStackTrace();
 			err = "解析binlog线程停止，MySQL主库数据包解析失败，原因:" + err;
-			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
-					resVo.toString());
+			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
+					+ parseSession.toString() + "\n" + resVo.toString());
 		} finally {
 			System.out.println("---------BinlogParser解析线程结束----------------");
 			c.disconnect();

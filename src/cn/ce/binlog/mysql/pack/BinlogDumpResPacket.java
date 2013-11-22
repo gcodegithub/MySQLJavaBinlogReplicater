@@ -1,9 +1,6 @@
 package cn.ce.binlog.mysql.pack;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
@@ -12,12 +9,8 @@ import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.BinlogEventHeader;
-import cn.ce.binlog.mysql.event.CreateFileLogEvent;
-import cn.ce.binlog.mysql.parse.MysqlConnector;
+import cn.ce.binlog.mysql.util.ReadWriteUtil;
 import cn.ce.binlog.session.BinlogParseSession;
-import cn.ce.binlog.session.BinlogPosition;
-import cn.ce.utils.common.BeanUtil;
-import cn.ce.utils.common.ProFileUtil;
 
 public class BinlogDumpResPacket {
 	private final static Log logger = LogFactory
@@ -41,6 +34,13 @@ public class BinlogDumpResPacket {
 	public void genEvent(BinlogParseSession session) throws Exception {
 		// 无符号数
 		final int mark = ((byte) binlogDumpBody[0]) & 0xFF;
+		if (mark == 254) {
+			// Indicates end of stream. It's not clear when this would
+			// be sent.
+			logger.warn("Received EOF packet from server, apparent"
+					+ " master disconnected.");
+			return;
+		}
 		if (mark != 0) {
 			this.error(binlogDumpBody);
 		}
@@ -119,30 +119,27 @@ public class BinlogDumpResPacket {
 
 	private void error(byte[] data) throws Exception {
 		final int mark = ((byte) data[0]) & 0xFF;
-//		if (mark == 255) // error from master
-//		{
-//			// Indicates an error, for example trying to fetch from wrong
-//			// binlog position.
-//			position = NET_HEADER_SIZE + 1;
-//			final int errno = getInt16();
-//			String sqlstate = forward(1).getFixString(SQLSTATE_LENGTH);
-//			String errmsg = getFixString(limit - position);
-//			throw new IOException("Received error packet:" + " errno = "
-//					+ errno + ", sqlstate = " + sqlstate + " errmsg = "
-//					+ errmsg);
-//		} else if (mark == 254) {
-//			// Indicates end of stream. It's not clear when this would
-//			// be sent.
-//			logger.warn("Received EOF packet from server, apparent"
-//					+ " master disconnected.");
-//			return false;
-//		} else {
-//			// Should not happen.
-//			throw new IOException("Unexpected response " + mark
-//					+ " while fetching binlog: packet #" + netnum + ", len = "
-//					+ netlen);
-//		}
-		throw new Exception("解析出现错误");
+		if (mark == 255) // error from master
+		{
+			int pos = BinlogEvent.NET_HEADER_SIZE + 1;
+			final int errno = ReadWriteUtil.readUnsignedShortLittleEndian(data,
+					pos);
+			// pos = pos + 2;
+			String sqlstate = ReadWriteUtil.getFixString(data, pos - 1,
+					BinlogEvent.SQLSTATE_LENGTH, "UTF-8");
+			// String sqlstate = forward(1).getFixString();
+			pos = pos + BinlogEvent.SQLSTATE_LENGTH;
+			String errmsg = ReadWriteUtil.getFixString(data, pos - 3,
+					data.length - pos, "UTF-8");
+			throw new IOException("Received error packet:" + " errno = "
+					+ errno + ", sqlstate = " + sqlstate + " errmsg = "
+					+ errmsg);
+		} else {
+			// Should not happen.
+			throw new IOException("Unexpected response " + mark
+					+ " while fetching binlog: packet #");
+		}
+
 	}
 
 	@Override
