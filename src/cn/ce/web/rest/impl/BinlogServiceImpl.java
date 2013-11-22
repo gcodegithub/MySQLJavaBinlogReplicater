@@ -63,6 +63,7 @@ public class BinlogServiceImpl implements IFBinlogService {
 			resVO.setResCode(TokenAuthRes.ERROR);
 			ex.printStackTrace();
 		} finally {
+			System.out.println("-----------webservice 调用完成---------------");
 			c.disconnect();
 			BinlogParserManager.sessionMap.remove(slaveId.toString());
 		}

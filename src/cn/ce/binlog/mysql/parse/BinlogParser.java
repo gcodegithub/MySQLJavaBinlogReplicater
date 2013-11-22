@@ -7,6 +7,8 @@ import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
 import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.session.BinlogParseSession;
 import cn.ce.binlog.session.BinlogParserManager;
+import cn.ce.cons.Const;
+import cn.ce.utils.mail.Alarm;
 import cn.ce.web.rest.vo.BinParseResultVO;
 
 public class BinlogParser {
@@ -25,24 +27,27 @@ public class BinlogParser {
 		if (!c.isConnected()) {
 			c.connect();
 		}
-		MysqlConnector nc = c.clone();
+		
+		MysqlConnector nc =c.clone() ;
 		try {
-			nc.connect();
+			nc.reconnect();
+			System.out.println("---------BinlogParser发送解析请求----------------");
 			MySQLDumper.sendBinlogDump(c, parseSession);
 			parseSession.setParseThread(Thread.currentThread());
 			while (c.isConnected()) {
 				TableMetaCache tableMetaCache = new TableMetaCache(nc);
-				BinlogDumpResPacket dumpResPackage = MySQLDumper
-						.receiveBinlogDump(c, parseSession);
 				parseSession.setTableMetaCache(tableMetaCache);
-				// parseSession.addBinlogDumpResPacket(dumpResPackage);
-				// logger.info(" ######################## log filename : "
-				// + parseSession.getLogPosition().getFileName()
-				// + " pos : "
-				// + parseSession.getLogPosition().getPosition());
+				MySQLDumper.receiveBinlogDump(c, parseSession);
+				System.out.println("---------BinlogParser处理完一次输入包----------------");
 			}
+		} catch (Throwable e) {
+			String err = e.getMessage();
+			e.printStackTrace();
+			err = "解析binlog线程停止，MySQL主库数据包解析失败，原因:" + err;
+			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
+					resVo.toString());
 		} finally {
-			System.out.println("-----------断开和MySQL链接---------------");
+			System.out.println("---------BinlogParser解析线程结束----------------");
 			c.disconnect();
 			nc.disconnect();
 			parseSession.setParseThread(null);

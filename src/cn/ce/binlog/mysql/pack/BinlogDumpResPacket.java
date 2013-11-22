@@ -117,9 +117,32 @@ public class BinlogDumpResPacket {
 		}
 	}
 
-	private void error(byte[] data) {
+	private void error(byte[] data) throws Exception {
 		final int mark = ((byte) data[0]) & 0xFF;
-
+//		if (mark == 255) // error from master
+//		{
+//			// Indicates an error, for example trying to fetch from wrong
+//			// binlog position.
+//			position = NET_HEADER_SIZE + 1;
+//			final int errno = getInt16();
+//			String sqlstate = forward(1).getFixString(SQLSTATE_LENGTH);
+//			String errmsg = getFixString(limit - position);
+//			throw new IOException("Received error packet:" + " errno = "
+//					+ errno + ", sqlstate = " + sqlstate + " errmsg = "
+//					+ errmsg);
+//		} else if (mark == 254) {
+//			// Indicates end of stream. It's not clear when this would
+//			// be sent.
+//			logger.warn("Received EOF packet from server, apparent"
+//					+ " master disconnected.");
+//			return false;
+//		} else {
+//			// Should not happen.
+//			throw new IOException("Unexpected response " + mark
+//					+ " while fetching binlog: packet #" + netnum + ", len = "
+//					+ netlen);
+//		}
+		throw new Exception("解析出现错误");
 	}
 
 	@Override

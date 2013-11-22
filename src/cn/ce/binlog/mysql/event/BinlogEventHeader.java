@@ -1,6 +1,8 @@
 package cn.ce.binlog.mysql.event;
 
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
@@ -8,8 +10,12 @@ import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.mysql.util.ReadWriteUtil;
 
-public class BinlogEventHeader {
+public class BinlogEventHeader implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4248858574529226294L;
 	private final static Log logger = LogFactory
 			.getLog(BinlogEventHeader.class);
 	private byte[] eventHeaderBytes;

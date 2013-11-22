@@ -33,6 +33,7 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 			this.contiParsebinlog(resVo, slaveId);
 			BinlogParserManager.save2file(c, slaveId, bps, resVo);
 		} catch (Throwable e) {
+			System.out.println("-----------xml binlog解析出现异常---------------");
 			c.disconnect();
 			BinlogParserManager.sessionMap.remove(slaveId);
 			String err = e.getMessage();
@@ -56,10 +57,13 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 
 	private void contiParsebinlog(BinParseResultVO resVo, String slaveId)
 			throws Throwable {
-		String binlogfilename = ProFileUtil.findMsgString(
-				Const.checkpointFileClasspath, "192.168.215.1.filename");
-		String binlogPosition = ProFileUtil.findMsgString(
-				Const.checkpointFileClasspath, "192.168.215.1.pos");
+		String posFileAbspath = ProFileUtil.findMsgString(
+				Const.sysconfigFileClasspath,
+				"binlogparse.checkpoint.fullpath.file");
+		String binlogfilename = ProFileUtil.getValueFromProAbsPath(
+				posFileAbspath, serverhost + ".filename");
+		String binlogPosition = ProFileUtil.getValueFromProAbsPath(
+				posFileAbspath, serverhost + ".pos");
 		c = new MysqlConnector(serverhost, new Integer(serverPort), username,
 				password);
 		BinlogParserManager.startDumpToSession(new Long(slaveId),
@@ -78,7 +82,8 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 	}
 
 	public void destroy() throws Exception {
-		c.disconnect();
+		System.out.println("-----------Spring容器销毁---------------");
+		// c.disconnect();
 	}
 
 }

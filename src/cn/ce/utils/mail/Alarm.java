@@ -5,6 +5,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import cn.ce.cons.Const;
 import cn.ce.utils.common.BeanUtil;
 import cn.ce.utils.common.ProFileUtil;
 
@@ -63,18 +64,19 @@ public class Alarm {
 	}
 
 	public static void main(String[] args) throws Exception {
-
-		for (int i = 0; i < 3; i++) {
-			// String smtpPort, String smtpAdd,String sendEmailAdd, String
-			// sendEmailPass, String recEmailAdd,String subject, String
-			// emailContent
-			Alarm.sendFetalErrorEmail("25", "mail.300.cn", "szswb@300.cn",
-					"q1w2e3r4ys",
-					"yaochuncen@300.cn,yaochuncen@300.cn,yaochuncen@300.cn",
-					",", "Hello 多个收件人测试", "中文的内容是否乱码");
-			System.out.println(i);
-			Thread.sleep(3000);
-		}
+		Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, "Hello 多个收件人测试", "中文的内容是否乱码");
+//		for (int i = 0; i < 3; i++) {
+//			// String smtpPort, String smtpAdd,String sendEmailAdd, String
+//			// sendEmailPass, String recEmailAdd,String subject, String
+//			// emailContent
+//			
+//			Alarm.sendFetalErrorEmail("25", "mail.300.cn", "szswb@300.cn",
+//					"q1w2e3r4ys",
+//					"wangjing@300.cn",
+//					",", "Hello 多个收件人测试", "中文的内容是否乱码");
+//			System.out.println(i);
+//			Thread.sleep(3000);
+//		}
 		System.out.println("-----------------OVER------------------");
 	}
 }

@@ -25,6 +25,11 @@ import cn.ce.web.rest.vo.RowEventVO;
 
 public abstract class RowsLogEvent extends BinlogEvent {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 839655811118949602L;
+
 	private Charset charset = Charset.defaultCharset();
 
 	private final List<ColumnInfoValue> beforeColumnInfo = new ArrayList<ColumnInfoValue>();
@@ -127,7 +132,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 					assert (buffer.getUint8() == val); // EXTRA_ROW_INFO_FORMAT_OFFSET
 					for (int j = 0; j < val; j++) {
 						assert (buffer.getUint8() == val); // EXTRA_ROW_INFO_HDR_BYTES
-															// + i
+						// + i
 					}
 					break;
 				default:
@@ -155,7 +160,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 		rowDMLType = genDMLType();
 	}
 
-	public final void fillTable(BinlogParseSession context) {
+	public final void fillTable(BinlogParseSession context) throws Exception {
 		table = context.getTable(tableId);
 
 		// end of statement check:
@@ -219,7 +224,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 				throw new Exception("not found tableId:" + this.getTableId());
 			}
 			String fullname = table.getDbName() + "." + table.getTableName();
-//			long tableId = this.getTableId();
+			// long tableId = this.getTableId();
 
 			RowsLogBuffer buffer = this.getRowsBuf(charset.name());
 			BitSet columns = this.getColumns();
@@ -259,7 +264,8 @@ public abstract class RowsLogEvent extends BinlogEvent {
 				}
 			}
 		} catch (Exception e) {
-			throw new Exception("parse row data failed.", e);
+			String err = e.getMessage();
+			throw new Exception("parse row data failed.err:" + err, e);
 		}
 
 	}

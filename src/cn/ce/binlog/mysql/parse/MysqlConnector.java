@@ -28,6 +28,7 @@ public class MysqlConnector implements Cloneable {
 	private SocketChannel channel;
 	private String serverhost;
 	private int serverPort;
+	private MysqlConnector oldNc;
 
 	public MysqlConnector(String serverhost, int serverPort, String username,
 			String password) {
@@ -40,8 +41,12 @@ public class MysqlConnector implements Cloneable {
 	}
 
 	public MysqlConnector clone() {
+		if (oldNc != null) {
+			oldNc.disconnect();
+		}
 		MysqlConnector nc = new MysqlConnector(this.getServerhost(),
 				this.getServerPort(), this.getUsername(), this.getPassword());
+		oldNc = nc;
 		return nc;
 	}
 
@@ -107,6 +112,7 @@ public class MysqlConnector implements Cloneable {
 	}
 
 	public void reconnect() throws IOException {
+		System.out.println("-----------重新链接---------------");
 		disconnect();
 		connect();
 	}

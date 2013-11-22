@@ -1,5 +1,13 @@
 package cn.ce.utils.common;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.beanutils.BeanMap;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,6 +31,25 @@ import org.apache.commons.validator.EmailValidator;
 public class BeanUtil {
 
 	private final static Log logger = LogFactory.getLog(BeanUtil.class);
+
+	public static void seriObject2File(String fileFullPath, Serializable obj)
+			throws Exception {
+		ObjectOutputStream output = new ObjectOutputStream(
+				new FileOutputStream(new File(fileFullPath)));
+		output.writeObject(obj);
+		IOUtils.closeQuietly(output);
+		ProFileUtil.checkIsExist(fileFullPath, true);
+	}
+
+	public static Serializable getSeriObjFromFile(String fileFullPath)
+			throws Exception {
+		ProFileUtil.checkIsExist(fileFullPath, true);
+		ObjectInputStream input = new ObjectInputStream(new FileInputStream(
+				new File(fileFullPath)));
+		Serializable t = (Serializable) input.readObject();
+		IOUtils.closeQuietly(input);
+		return t;
+	}
 
 	public static String getFirstOneFromCSV(String csv, String token)
 			throws RuntimeException {

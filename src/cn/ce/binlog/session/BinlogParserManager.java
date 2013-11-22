@@ -15,6 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import cn.ce.binlog.mysql.conv.MySQLEventConsumer;
 import cn.ce.binlog.mysql.parse.BinlogParser;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
+import cn.ce.cons.Const;
 import cn.ce.utils.common.ProFileUtil;
 import cn.ce.utils.common.StringUtil;
 import cn.ce.utils.mail.Alarm;
@@ -27,7 +28,6 @@ public class BinlogParserManager {
 			.getLog(BinlogParserManager.class);
 	private final static BinlogParser dao = new BinlogParser();
 	private final static MySQLEventConsumer consumerDao = new MySQLEventConsumer();
-	private final static String posFileClasspath = "conf/binlogPosClintIdMap.properties";
 	private static ExecutorService executor = Executors.newFixedThreadPool(10);
 
 	public static final ConcurrentHashMap<String, BinlogParseSession> sessionMap = new ConcurrentHashMap<String, BinlogParseSession>();
@@ -42,15 +42,17 @@ public class BinlogParserManager {
 
 	public static void getToken(Long slaveId, TokenAuthRes res)
 			throws Exception {
-		String tokenFileClasspath = "conf/clientIdToken.properties";
-		String absPath = ProFileUtil.getFileAbsPath(tokenFileClasspath);
+		String tokenFileAbspath = ProFileUtil
+				.findMsgString(Const.sysconfigFileClasspath,
+						"binlogparse.token.fullpath.file");
 		String key = slaveId.toString();
-		String tokenInFile = ProFileUtil.findMsgString(tokenFileClasspath, key);
+		String tokenInFile = ProFileUtil.getValueFromProAbsPath(
+				tokenFileAbspath, key);
 		if (StringUtil.isBlank(tokenInFile)) {
 			// 文件中不存在slaveId的token
 			tokenInFile = String.valueOf(System.currentTimeMillis());
-			ProFileUtil.modifyOrCreatePropertiesWithFileLock(absPath, key,
-					tokenInFile, false, false);
+			ProFileUtil.modifyOrCreatePropertiesWithFileLock(tokenFileAbspath,
+					key, tokenInFile, false, false);
 			res.setMsgDetail("first visit,generate new token.");
 			res.setResCode(TokenAuthRes.NEW_TOKEN);
 			res.setNewToken(tokenInFile);
@@ -65,9 +67,12 @@ public class BinlogParserManager {
 	}
 
 	public static void auth(Long slaveId, String tokenInput) throws Exception {
-		String tokenFileClasspath = "conf/clientIdToken.properties";
+		String tokenFileAbspath = ProFileUtil
+				.findMsgString(Const.sysconfigFileClasspath,
+						"binlogparse.token.fullpath.file");
 		String key = slaveId.toString();
-		String tokenInFile = ProFileUtil.findMsgString(tokenFileClasspath, key);
+		String tokenInFile = ProFileUtil.getValueFromProAbsPath(
+				tokenFileAbspath, key);
 		if (StringUtil.isBlank(tokenInFile)) {
 			// 文件中不存在slaveId的token
 			throw new Exception("未注册slaveId,请先调用getToken进行注册");
@@ -92,12 +97,16 @@ public class BinlogParserManager {
 		String filenameKey = slaveId + ".filenameKey";
 		String binlogPositionKey = slaveId + ".binlogPosition";
 		BinlogParserManager.sessionMap.put(slaveId.toString(), parseSession);
+		//
+		String posFileAbspath = ProFileUtil.findMsgString(
+				Const.sysconfigFileClasspath,
+				"binlogparse.checkpoint.fullpath.file");
 		// 不输入检查点信息则从配置文件读取
 		if (StringUtils.isBlank(binlogfilename) || binlogPosition == null
 				|| new Long(binlogPosition) < 4) {
-			binlogfilename = ProFileUtil.findMsgString(posFileClasspath,
+			binlogfilename = ProFileUtil.getValueFromProAbsPath(posFileAbspath,
 					filenameKey);
-			binlogPosition = ProFileUtil.findMsgString(posFileClasspath,
+			binlogPosition = ProFileUtil.getValueFromProAbsPath(posFileAbspath,
 					binlogPositionKey);
 			if (binlogfilename == null || binlogPosition == null) {
 				// throw new Exception("Error:无法取得日志检查点信息");
@@ -135,14 +144,16 @@ public class BinlogParserManager {
 
 	public static void saveCheckPoint(BinParseResultVO resVo, long slaveId)
 			throws Exception {
-		String absPath = ProFileUtil.getFileAbsPath(posFileClasspath);
+		String posFileAbspath = ProFileUtil.findMsgString(
+				Const.sysconfigFileClasspath,
+				"binlogparse.checkpoint.fullpath.file");
 		String filenameKey = slaveId + ".filenameKey";
 		String binlogPositionKey = slaveId + ".binlogPosition";
 		String binlogfileName = resVo.getBinlogfilenameNext();
 		String pos = resVo.getBinlogPositionNext().toString();
-		ProFileUtil.modifyOrCreatePropertiesWithFileLock(absPath, filenameKey,
-				binlogfileName, false, false);
-		ProFileUtil.modifyOrCreatePropertiesWithFileLock(absPath,
+		ProFileUtil.modifyOrCreatePropertiesWithFileLock(posFileAbspath,
+				filenameKey, binlogfileName, false, false);
+		ProFileUtil.modifyOrCreatePropertiesWithFileLock(posFileAbspath,
 				binlogPositionKey, pos, false, false);
 	}
 

@@ -11,7 +11,6 @@ import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.RotateLogEvent;
-import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.binlog.session.BinlogParseSession;
 import cn.ce.binlog.session.BinlogParserManager;
@@ -19,40 +18,59 @@ import cn.ce.cons.Const;
 import cn.ce.utils.JaxbContextUtil;
 import cn.ce.utils.common.BeanUtil;
 import cn.ce.utils.common.ProFileUtil;
+import cn.ce.utils.mail.Alarm;
 import cn.ce.web.rest.vo.BinParseResultVO;
 import cn.ce.web.rest.vo.EventVO;
+import cn.ce.web.rest.vo.RotateLogEventVO;
 
 public class MySQLEventConsumer {
 	private final static Log logger = LogFactory
 			.getLog(MySQLEventConsumer.class);
 
 	public static void save2File(final BinlogParseSession bps,
-			final BinParseResultVO resVo) throws NumberFormatException,
-			Exception {
-		boolean isNeedWait = false;
+			final BinParseResultVO resVo) {
 		MysqlConnector c = bps.getC();
-		String slaveId = bps.getSlaveId().toString();
-		while (c.isConnected()) {
-			bps.setConsumerThread(Thread.currentThread());
-			int len = bps.getEventVOQueueSize();
-			try {
-				if (len > 0) {
-					System.out.println("------------有增量数据，準備解析");
-					BinlogParserManager.getVOFromSession(resVo, new Long(
-							slaveId), isNeedWait);
-					MySQLEventConsumer.FilePersis(resVo, c.getServerhost());
-					BinlogParserManager
-							.saveCheckPoint(resVo, new Long(slaveId));
-					resVo.setEventVOList(new ArrayList<EventVO>());
-				} else {
-					System.out.println("------------没有增量数据供解析准备睡觉了");
-					Thread.sleep(60 * 1000);
-					System.out.println("------------睡到自然醒，在看看有没有增量数据");
+		try {
+			boolean isNeedWait = false;
+			String slaveId = bps.getSlaveId().toString();
+			while (c.isConnected()) {
+				bps.setConsumerThread(Thread.currentThread());
+				int len = bps.getEventVOQueueSize();
+				try {
+					if (len > 0) {
+						System.out.println("------------有增量数据，準備解析,Thread:"
+								+ Thread.currentThread());
+						BinlogParserManager.getVOFromSession(resVo, new Long(
+								slaveId), isNeedWait);
+						MySQLEventConsumer.FilePersis(resVo, c.getServerhost());
+						BinlogParserManager.saveCheckPoint(resVo, new Long(
+								slaveId));
+						resVo.setEventVOList(new ArrayList<EventVO>());
+					} else {
+						System.out.println("------------没有增量数据供解析准备睡觉了,Thread:"
+								+ Thread.currentThread());
+						Thread.sleep(60 * 1000);
+						System.out
+								.println("------------睡到自然醒，在看看有没有增量数据,Thread:"
+										+ Thread.currentThread());
+					}
+				} catch (InterruptedException ex) {
+					Thread.interrupted();
+					System.out.println("------------增量数据突然来到，好梦被打醒,Thread:"
+							+ Thread.currentThread());
 				}
-			} catch (InterruptedException ex) {
-				Thread.interrupted();
-				System.out.println("------------增量数据突然来到，好梦被打醒");
-			}
+			}// while end
+		} catch (Throwable e) {
+			String err = e.getMessage();
+			e.printStackTrace();
+			err = "xml binlog文件持久化线程停止，原因:" + err;
+			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
+					resVo.toString());
+		} finally {
+			System.out
+					.println("---------MySQLEventConsumer持久化文件线程结束!!----------------");
+			c.disconnect();
+			bps.setConsumerThread(null);
 		}
 	}
 
@@ -61,6 +79,7 @@ public class MySQLEventConsumer {
 		if (resVo.getEventVOList().size() == 0) {
 			return;
 		}
+
 		String absDirPath = ProFileUtil
 				.findMsgString(Const.sysconfigFileClasspath,
 						"bootstrap.mysql.vo.filepool.dir");
@@ -68,12 +87,29 @@ public class MySQLEventConsumer {
 		//
 		String binfilename_end = resVo.getBinlogfilenameNext();
 		Long pos_end = resVo.getBinlogPositionNext();
-		String fileNameFullPath = absDirPath + "/" + binfilename_end + "_"
-				+ pos_end;
-		File target = new File(fileNameFullPath);
+		//
+		EventVO evo = resVo.getEventVOList().get(0);
+		if (evo instanceof RotateLogEventVO) {
+			String binfilename_vo = ((RotateLogEventVO) evo).getFilename();
+			Long pos_vo = ((RotateLogEventVO) evo).getFileBeginPosition();
+			if (binfilename_end.equals(binfilename_vo)
+					&& pos_end.equals(pos_vo)) {
+				System.out.println("------------------数据的包内容和之前重复，不用持久化到文件");
+				return;
+			}
+		}
+
+		String tmpFileNameFullPath = absDirPath + "/" + binfilename_end + "_"
+				+ pos_end + ".tmp";
+		File target = new File(tmpFileNameFullPath);
 		FileUtils.deleteQuietly(target);
 		FileUtils.touch(target);
-		JaxbContextUtil.marshall(resVo, fileNameFullPath);
+		JaxbContextUtil.marshall(resVo, tmpFileNameFullPath);
+		ProFileUtil.checkIsExist(tmpFileNameFullPath, true);
+		String fileNameFullPath = absDirPath + "/" + binfilename_end + "_"
+				+ pos_end + ".xml";
+		FileUtils.moveFile(new File(tmpFileNameFullPath), new File(
+				fileNameFullPath));
 		ProFileUtil.checkIsExist(fileNameFullPath, true);
 
 	}
@@ -115,8 +151,8 @@ public class MySQLEventConsumer {
 	private static void waitForData(BinlogParseSession parseSession)
 			throws Exception {
 		String waitMillis = ProFileUtil.findMsgString(
-				"conf/sysconfig.properties", "consumer.wait.millis");
-		String tryNum = ProFileUtil.findMsgString("conf/sysconfig.properties",
+				Const.sysconfigFileClasspath, "consumer.wait.millis");
+		String tryNum = ProFileUtil.findMsgString(Const.sysconfigFileClasspath,
 				"consumer.wait.try.num");
 		int len = parseSession.getEventVOQueueSize();
 		int breakCount = new Integer(tryNum);

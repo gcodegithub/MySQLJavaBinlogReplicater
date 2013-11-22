@@ -1,5 +1,6 @@
 package cn.ce.binlog.mysql.event;
 
+import java.io.Serializable;
 import java.util.BitSet;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -12,13 +13,30 @@ import cn.ce.web.rest.vo.TableMapLogEventVO;
 
 public final class TableMapLogEvent extends BinlogEvent {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1657482021786758735L;
 	protected final String dbname;
 	protected final String tblname;
+	protected final int columnCnt;
+	protected final ColumnInfo[] columnInfo; // buffer for field metadata
+
+	protected final long tableId;
+	protected BitSet nullBits;
+
+	/** TM = "Table Map" */
+	public static final int TM_MAPID_OFFSET = 0;
+	public static final int TM_FLAGS_OFFSET = 6;
 
 	/**
 	 * Holding mysql column information.
 	 */
-	public static final class ColumnInfo {
+	public static final class ColumnInfo implements Serializable{
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1857437904678086109L;
 		public int type;
 		public int meta;
 
@@ -42,16 +60,6 @@ public final class TableMapLogEvent extends BinlogEvent {
 		vo.setTableId(tableId);
 		return vo;
 	}
-
-	protected final int columnCnt;
-	protected final ColumnInfo[] columnInfo; // buffer for field metadata
-
-	protected final long tableId;
-	protected BitSet nullBits;
-
-	/** TM = "Table Map" */
-	public static final int TM_MAPID_OFFSET = 0;
-	public static final int TM_FLAGS_OFFSET = 6;
 
 	/**
 	 * Constructor used by slave to read the event from the binary log.
@@ -195,4 +203,6 @@ public final class TableMapLogEvent extends BinlogEvent {
 	public final long getTableId() {
 		return tableId;
 	}
+
+	
 }

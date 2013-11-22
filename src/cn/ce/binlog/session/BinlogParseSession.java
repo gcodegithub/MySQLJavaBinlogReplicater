@@ -11,9 +11,11 @@ import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.FormatDescriptionLogEvent;
 import cn.ce.binlog.mysql.event.TableMapLogEvent;
 import cn.ce.binlog.mysql.event.XidLogEvent;
-import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.binlog.mysql.query.TableMetaCache;
+import cn.ce.cons.Const;
+import cn.ce.utils.common.BeanUtil;
+import cn.ce.utils.common.ProFileUtil;
 
 public class BinlogParseSession {
 	private final Map<Long, TableMapLogEvent> mapOfTable = new HashMap<Long, TableMapLogEvent>();
@@ -24,6 +26,7 @@ public class BinlogParseSession {
 	private MysqlConnector c;
 	private Thread parseThread;
 	private Thread consumerThread;
+	private Map<Long, String> tableEventSeriFullPathMap = new HashMap<Long, String>();
 
 	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
 			200);
@@ -48,7 +51,7 @@ public class BinlogParseSession {
 
 	public void addEventVOQueue(BinlogEvent binlogEvent) {
 		eventVOQueue.offer(binlogEvent);
-		if (binlogEvent instanceof XidLogEvent) {
+		if (binlogEvent instanceof XidLogEvent && this.consumerThread != null) {
 			if (this.consumerThread.isInterrupted() == false) {
 				this.consumerThread.interrupt();
 			}
@@ -67,12 +70,22 @@ public class BinlogParseSession {
 		this.description = description;
 	}
 
-	public final void putTable(TableMapLogEvent mapEvent) {
-		mapOfTable.put(Long.valueOf(mapEvent.getTableId()), mapEvent);
+	public final void putTable(TableMapLogEvent mapEvent) throws Exception {
+		Long tableId = mapEvent.getTableId();
+		mapOfTable.put(Long.valueOf(tableId), mapEvent);
+		String serFullPath = this.getTableMapLogEventSeriFullName(tableId);
+		BeanUtil.seriObject2File(serFullPath, mapEvent);
+
 	}
 
-	public final TableMapLogEvent getTable(final long tableId) {
-		return mapOfTable.get(Long.valueOf(tableId));
+	public final TableMapLogEvent getTable(final long tableId) throws Exception {
+		TableMapLogEvent mapEvent = mapOfTable.get(Long.valueOf(tableId));
+		if (mapEvent == null) {
+			String serFullPath = this.getTableMapLogEventSeriFullName(tableId);
+			mapEvent = (TableMapLogEvent) BeanUtil
+					.getSeriObjFromFile(serFullPath);
+		}
+		return mapEvent;
 	}
 
 	public final void clearAllTables() {
@@ -131,4 +144,19 @@ public class BinlogParseSession {
 		this.consumerThread = consumerThread;
 	}
 
+	private String getTableMapLogEventSeriFullName(Long tableId)
+			throws Exception {
+		if (!tableEventSeriFullPathMap.containsKey(tableId)) {
+			String serverhost = this.getC().getServerhost();
+			String slaveId = this.getSlaveId().toString();
+			String dir = ProFileUtil.findMsgString(
+					Const.sysconfigFileClasspath, "binlogpares.eventseri.dir");
+			String tableEventSeriFullPath = dir + "/" + serverhost + "_"
+					+ slaveId + "_TableMapLogEvent_" + tableId;
+			tableEventSeriFullPathMap.put(tableId, tableEventSeriFullPath);
+		}
+		String tableEventSeriFullPath = tableEventSeriFullPathMap.get(tableId);
+		return tableEventSeriFullPath;
+
+	}
 }

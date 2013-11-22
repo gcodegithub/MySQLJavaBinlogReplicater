@@ -34,7 +34,6 @@ import org.springframework.core.io.Resource;
 import cn.ce.utils.filecache.FileObjectCacheOperUtil;
 import cn.ce.utils.filecache.PropertiesConverter;
 
-
 public class ProFileUtil {
 
 	private final static Log logger = LogFactory.getLog(ProFileUtil.class);
@@ -136,6 +135,14 @@ public class ProFileUtil {
 	public static String getValueFromProInClassPath(String proFileClassPath,
 			String key) throws Exception {
 		String absPath = ProFileUtil.getFileAbsPath(proFileClassPath);
+		ProFileUtil.checkIsExist(absPath, true);
+		Properties p = ProFileUtil.loadFromCGInfoCache(absPath);
+		String value = (String) p.get(key);
+		return value;
+	}
+
+	public static String getValueFromProAbsPath(String absPath, String key)
+			throws Exception {
 		ProFileUtil.checkIsExist(absPath, true);
 		Properties p = ProFileUtil.loadFromCGInfoCache(absPath);
 		String value = (String) p.get(key);

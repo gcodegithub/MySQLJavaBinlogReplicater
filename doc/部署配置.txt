@@ -1,21 +1,23 @@
-MySQL主库
+------------------------------------------------------MySQL主库
 server-id		= 1
 log_bin			= /var/log/mysql/mysql-bin.log
 binlog-format=ROW
 innodb_flush_log_at_trx_commit=1
 sync_binlog=1
 expire_logs_days	= 1095
-max_binlog_size         = 10240M
+max_binlog_size         = 1024M
 
 
+------------------------------------------------------配置文件
+conf/sysconfig.properties配置文件按照实际内容进行配置
+配置都要配置为完整路径，不存在的文件夹和目录都需要手动预建立
+bootstrap.mysql.vo.filepool.dir
+binlogparse.checkpoint.fullpath.file
+binlogparse.token.fullpath.file
+binlogpares.eventseri.dir
 
-conf/sysconfig.properties配置文件
-ALARM EMAIL需要配置
-实时监控多master主库需要配置
-bootstrap.mysql.vo.filepool.dir需要配置replaylog路径
 
-
-Tomcat设置
+------------------------------------------------------Tomcat设置
 <Context path="/expert" docBase="expert" debug="0" reloadable="false">
 
 -XX:+HeapDumpOnOutOfMemoryError -Xverify:none -Xmx2048m -Xms2048m -Xmn1024m -XX:PermSize=512m -XX:MaxPermSize=512m

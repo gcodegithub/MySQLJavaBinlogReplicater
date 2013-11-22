@@ -1,5 +1,6 @@
 package cn.ce.binlog.mysql.event;
 
+import java.io.Serializable;
 import java.util.BitSet;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -8,12 +9,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.session.BinlogParseSession;
-import cn.ce.binlog.session.BinlogParserManager;
 import cn.ce.binlog.session.BinlogPosition;
 import cn.ce.binlog.session.LogBuffer;
 import cn.ce.web.rest.vo.EventVO;
 
-public class BinlogEvent {
+public class BinlogEvent implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4394370178638987282L;
+
 	protected BinlogEventHeader header;
 
 	protected static final BitSet handleSet = new BitSet(
