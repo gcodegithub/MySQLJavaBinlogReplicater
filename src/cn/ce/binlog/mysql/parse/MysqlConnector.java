@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -201,6 +203,13 @@ public class MysqlConnector implements Cloneable {
 
 	public void setServerPort(int serverPort) {
 		this.serverPort = serverPort;
+	}
+
+	@Override
+	public String toString() {
+		String s = ToStringBuilder.reflectionToString(this,
+				ToStringStyle.MULTI_LINE_STYLE);
+		return s;
 	}
 
 	public static void main(String[] args) {

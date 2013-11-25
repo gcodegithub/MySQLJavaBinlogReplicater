@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import org.apache.commons.lang.StringUtils;
 
 import cn.ce.binlog.mysql.pack.FieldPacket;
@@ -51,14 +50,19 @@ public class TableMetaCache {
 								connection.reconnect();
 								return getTableMeta0(name);
 							} catch (Exception e1) {
+								String err = e1.getMessage();
+								e1.printStackTrace();
 								throw new RuntimeException(
-										"fetch failed by table meta:" + name,
+										"fetch failed by table meta:" + name
+												+ " " + err + e1.getMessage(),
 										e1);
 							}
 						} catch (Exception e) {
+							String err = e.getMessage();
 							e.printStackTrace();
 							throw new RuntimeException(
-									"fetch failed by table meta:" + name, e);
+									"fetch failed by table meta:" + name + " "
+											+ err, e);
 						}
 					}
 

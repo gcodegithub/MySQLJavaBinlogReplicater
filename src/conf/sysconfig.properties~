@@ -37,5 +37,5 @@ all.alarm.smtpadd=mail.300.cn
 all.alarm.send.email.add=xxxxxxx@300.cn
 all.alarm.send.email.pass=xxxxxxx
 #\u63a5\u53d7\u62a5\u8b66\u90ae\u4ef6\u5730\u5740
-all.alarm.rec.email.add=wangjing@300.cn,songyike@300.cn
+all.alarm.rec.email.add=xx@300.cn
 

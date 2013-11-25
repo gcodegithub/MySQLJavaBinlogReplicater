@@ -42,7 +42,8 @@ public class MySQLEventConsumer {
 								+ Thread.currentThread());
 						BinlogParserManager.getVOFromSession(resVo, new Long(
 								slaveId), isNeedWait);
-						MySQLEventConsumer.FilePersis(resVo, c.getServerhost());
+						MySQLEventConsumer.FilePersis(resVo, c.getServerhost(),
+								bps.getSlaveId());
 						BinlogParserManager.saveCheckPoint(resVo, new Long(
 								slaveId));
 						resVo.setEventVOList(new ArrayList<EventVO>());
@@ -74,8 +75,8 @@ public class MySQLEventConsumer {
 		}
 	}
 
-	public static void FilePersis(BinParseResultVO resVo, String serverhost)
-			throws Exception {
+	public static void FilePersis(BinParseResultVO resVo, String serverhost,
+			Long slaveId) throws Exception {
 		if (resVo.getEventVOList().size() == 0) {
 			return;
 		}
@@ -83,7 +84,7 @@ public class MySQLEventConsumer {
 		String absDirPath = ProFileUtil
 				.findMsgString(Const.sysconfigFileClasspath,
 						"bootstrap.mysql.vo.filepool.dir");
-		absDirPath = absDirPath + "/" + serverhost;
+		absDirPath = absDirPath + "/" + serverhost + "_" + slaveId;
 		//
 		String binfilename_end = resVo.getBinlogfilenameNext();
 		Long pos_end = resVo.getBinlogPositionNext();
