@@ -1,5 +1,7 @@
 package cn.ce.utils.common;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -163,11 +165,11 @@ public class ProFileUtil {
 		return url;
 	}
 
-	public static Properties loadFromCGInfoCache(String localProPath)
+	public static PropertiesExtend loadFromCGInfoCache(String localProPath)
 			throws Exception {
 		boolean isFile = true;
 		ProFileUtil.checkIsExist(localProPath, isFile);
-		Properties properties = FileObjectCacheOperUtil.loadObject(
+		PropertiesExtend properties = FileObjectCacheOperUtil.loadObject(
 				localProPath, new PropertiesConverter());
 		return properties;
 	}
@@ -245,6 +247,43 @@ public class ProFileUtil {
 		tempFile.delete();
 	}
 
+	public synchronized static void modifyPropertieWithOutFileLock(
+			String localFilePath, String key, String value, boolean isDelete,
+			boolean isReWriteMapFormat) throws Exception {
+		if (StringUtils.isBlank(localFilePath) || StringUtils.isBlank(key)
+				|| StringUtils.isBlank(value)) {
+			throw new Exception("修改本地资源文件方法输入的所有参数均不能为空！");
+		}
+		File propertiesFile = new File(localFilePath);
+		if (!propertiesFile.exists()) {
+			logger.warn("输入资源文件不存在！其绝对路径为：" + localFilePath + " 将创建该文件");
+			boolean isOk = propertiesFile.createNewFile();
+			if (!isOk) {
+				throw new Exception("无法创建资源文件，请检查权限" + localFilePath);
+			}
+		}
+		// 内存的资源文件镜像
+		PropertiesExtend p = ProFileUtil.loadFromCGInfoCache(localFilePath);
+		FileOutputStream fou = new FileOutputStream(propertiesFile);
+		BufferedOutputStream bos = new BufferedOutputStream(fou);
+		try {
+			bos = new BufferedOutputStream(fou);
+			if (isDelete) {
+				p.remove(key);
+			} else {
+				p.setProperty(key, value);
+			}
+			if (isReWriteMapFormat) {
+				p.store(bos, "edit success", " ");
+			} else {
+				p.store(bos, "edit success");
+			}
+			bos.flush();
+		} finally {
+			IOUtils.closeQuietly(bos);
+		}
+	}
+
 	// 带文件锁增加，修改或者删除资源文件某个记录
 	// 注意：文件所有內容都會加載入內存！
 	public synchronized static void modifyOrCreatePropertiesWithFileLock(
@@ -265,22 +304,25 @@ public class ProFileUtil {
 
 		FileLock fileLock = null;
 		// 内存的资源文件镜像
-		PropertiesExtend p = new PropertiesExtend();
-		InputStream fin = null;
+		PropertiesExtend p = ProFileUtil.loadFromCGInfoCache(localFilePath);
+		;
+		// InputStream fin = null;
+		// BufferedInputStream bis = null;
 		OutputStream fou = null;
+		BufferedOutputStream bos = null;
 		RandomAccessFile accessFile = new RandomAccessFile(localFilePath, "rw");
 		FileChannel fileChannel = null;
 		// 尝试获取锁次数
-		AtomicInteger count = new AtomicInteger(0);
+		int count = 0;
 		try {
 			// ---------------------------获取文件锁
 			fileChannel = accessFile.getChannel();
-			logger.info("准备获取文件锁");
+			// logger.info("准备获取文件锁");
 			// 准备获取锁，超时会退出
 			while (true) {
 				fileLock = fileChannel.tryLock();
 				// 最大等待时间为30秒
-				if (fileLock == null && count.intValue() >= 15) {
+				if (fileLock == null && count >= 15) {
 					// 超时了
 					throw new Exception("等待超时，退出");
 				}
@@ -288,20 +330,27 @@ public class ProFileUtil {
 					break;
 				}
 				Long ranSleep = NumberUtil.getRandomLong(3);
-				logger.info("准备休息毫秒数=" + ranSleep);
+				// logger.info("准备休息毫秒数=" + ranSleep);
 				// 等待时间在0.1秒～0.9秒间
-				Thread.currentThread().sleep(ranSleep);
-				count.incrementAndGet();
+				try {
+					Thread.currentThread().sleep(ranSleep);
+				} catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+				count++;
 			}
-			logger.info("获取的文件锁=" + fileLock);
+			// logger.info("获取的文件锁=" + fileLock);
 			// 表示已经获取锁
 			// ---------------------------
-			fin = new RAFInputStream(accessFile);
+
+			// fin = new RAFInputStream(accessFile);
+			// bis = new BufferedInputStream(fin);
 			fou = new RAFOutputStream(accessFile);
-			p.load(fin);
-			logger.info("准备读出文件" + localFilePath);
-			logger.info("写之前的资源文件内容:" + p);
-			logger.info("准备写入记录:" + key + "=" + value);
+			bos = new BufferedOutputStream(fou);
+			// p.load(bis);
+			// logger.info("准备读出文件" + localFilePath);
+			// logger.info("写之前的资源文件内容:" + p);
+			// logger.info("准备写入记录:" + key + "=" + value);
 			if (isDelete) {
 				p.remove(key);
 			} else {
@@ -309,24 +358,24 @@ public class ProFileUtil {
 			}
 
 			// 保存
-			logger.info("准备保存");
+			// logger.info("准备保存");
 			accessFile.seek(0);
 			if (isReWriteMapFormat) {
-				p.store(fou, "edit success", " ");
+				p.store(bos, "edit success", " ");
 			} else {
-				p.store(fou, "edit success");
+				p.store(bos, "edit success");
 			}
-			fou.flush();
+			bos.flush();
 			long fileSize = ((RAFOutputStream) fou).getLength();
 			accessFile.setLength(fileSize);
-			logger.info("保存成功");
+			// logger.info("保存成功");
 		} finally {
 			if (fileLock != null) {
 				fileLock.release();
 			}
-			IOUtils.closeQuietly(fin);
-			IOUtils.closeQuietly(fou);
-			logger.info("文件操作完毕");
+			// IOUtils.closeQuietly(bis);
+			IOUtils.closeQuietly(bos);
+			// logger.info("文件操作完毕");
 		}
 
 	}

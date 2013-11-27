@@ -77,10 +77,10 @@ public class BinlogDumpResPacket {
 		int pos = 0;
 		while (pos < manyEventAll.length) {
 			int eventHeaderLen = session.getDescription().getCommonHeaderLen();
-			logger.info("-----------------pos:" + pos);
-			logger.info("-----------------manyEventAll.length:"
-					+ manyEventAll.length);
-			logger.info("-----------------eventHeaderLen:" + eventHeaderLen);
+//			logger.info("-----------------pos:" + pos);
+//			logger.info("-----------------manyEventAll.length:"
+//					+ manyEventAll.length);
+//			logger.info("-----------------eventHeaderLen:" + eventHeaderLen);
 			// event 头内容
 			byte[] eventHeaderBytes = new byte[eventHeaderLen];
 
@@ -98,21 +98,21 @@ public class BinlogDumpResPacket {
 			}
 			byte[] oneEventAll = new byte[eventLen];
 			System.arraycopy(manyEventAll, pos, oneEventAll, 0, eventLen);
-			if (eventHeaderLen != eventLen) {
-				logger.info("有event head，有event body");
-			} else {
-				logger.info("没有event body，只有event head");
-			}
+//			if (eventHeaderLen != eventLen) {
+//				logger.info("有event head，有event body");
+//			} else {
+//				logger.info("没有event body，只有event head");
+//			}
 			pos = pos + eventLen;
 			BinlogEvent binlogEvent = BinlogEvent.buildEvent(eventHeader,
 					oneEventAll, session);
 			session.addEventVOQueue(binlogEvent);
-			if (eventHeaderLen != eventLen) {
-				logger.info("event body is not null");
-				break;
-			} else {
-				logger.info("event body is null");
-			}
+//			if (eventHeaderLen != eventLen) {
+//				logger.info("event body is not null");
+//				break;
+//			} else {
+//				logger.info("event body is null");
+//			}
 
 		}
 	}

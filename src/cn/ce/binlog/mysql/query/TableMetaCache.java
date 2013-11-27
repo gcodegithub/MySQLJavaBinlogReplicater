@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -33,7 +34,7 @@ public class TableMetaCache {
 	private MysqlConnector connection;
 
 	// 第一层tableId,第二层schema.table,解决tableId重复，对应多张表
-	private Map<String, TableMeta> tableMetaCache;
+	private ConcurrentMap<String, TableMeta> tableMetaCache;
 
 	public TableMetaCache(MysqlConnector con) {
 		this.connection = con;

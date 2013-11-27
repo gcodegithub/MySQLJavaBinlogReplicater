@@ -34,10 +34,11 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 			BinlogParserManager.save2file(c, slaveId, bps, resVo);
 		} catch (Throwable e) {
 			System.out.println("-----------xml binlog解析出现异常---------------");
-			c.disconnect();
-			BinlogParserManager.sessionMap.remove(slaveId);
 			String err = e.getMessage();
 			e.printStackTrace();
+			c.disconnect();
+			BinlogParserManager.sessionMap.remove(slaveId);
+
 			err = "解析binlog线程停止，原因:" + err;
 			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
 					resVo.toString());

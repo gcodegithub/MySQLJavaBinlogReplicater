@@ -61,7 +61,7 @@ public class BinlogEvent implements Serializable {
 
 		switch (header.getType()) {
 		case BinlogEvent.QUERY_EVENT: {
-			logger.info("QUERY_EVENT");
+//			logger.info("QUERY_EVENT");
 			QueryLogEvent event = new QueryLogEvent(header, buffer,
 					descriptionEvent);
 			event.parseQueryEvent();
@@ -71,7 +71,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.XID_EVENT: {
-			logger.info("XID_EVENT");
+//			logger.info("XID_EVENT");
 			XidLogEvent event = new XidLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -80,7 +80,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.TABLE_MAP_EVENT: {
-			logger.info("TABLE_MAP_EVENT");
+//			logger.info("TABLE_MAP_EVENT");
 			TableMapLogEvent mapEvent = new TableMapLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -89,7 +89,7 @@ public class BinlogEvent implements Serializable {
 			return mapEvent;
 		}
 		case BinlogEvent.WRITE_ROWS_EVENT_V1: {
-			logger.info("WRITE_ROWS_EVENT_V1");
+//			logger.info("WRITE_ROWS_EVENT_V1");
 			RowsLogEvent event = new WriteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -99,7 +99,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.UPDATE_ROWS_EVENT_V1: {
-			logger.info("UPDATE_ROWS_EVENT_V1");
+//			logger.info("UPDATE_ROWS_EVENT_V1");
 			RowsLogEvent event = new UpdateRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -109,7 +109,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.DELETE_ROWS_EVENT_V1: {
-			logger.info("DELETE_ROWS_EVENT_V1");
+//			logger.info("DELETE_ROWS_EVENT_V1");
 			RowsLogEvent event = new DeleteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -119,7 +119,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.ROTATE_EVENT: {
-			logger.info("ROTATE_EVENT");
+//			logger.info("ROTATE_EVENT");
 			RotateLogEvent event = new RotateLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -131,7 +131,7 @@ public class BinlogEvent implements Serializable {
 		}
 		case BinlogEvent.LOAD_EVENT:
 		case BinlogEvent.NEW_LOAD_EVENT: {
-			logger.info("NEW_LOAD_EVENT");
+//			logger.info("NEW_LOAD_EVENT");
 			LoadLogEvent event = new LoadLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -146,7 +146,7 @@ public class BinlogEvent implements Serializable {
 			break;
 		}
 		case BinlogEvent.CREATE_FILE_EVENT: {
-			logger.info("CREATE_FILE_EVENT");
+//			logger.info("CREATE_FILE_EVENT");
 			CreateFileLogEvent event = new CreateFileLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -154,7 +154,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.APPEND_BLOCK_EVENT: {
-			logger.info("APPEND_BLOCK_EVENT");
+//			logger.info("APPEND_BLOCK_EVENT");
 			AppendBlockLogEvent event = new AppendBlockLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -162,7 +162,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.DELETE_FILE_EVENT: {
-			logger.info("DELETE_FILE_EVENT");
+//			logger.info("DELETE_FILE_EVENT");
 			DeleteFileLogEvent event = new DeleteFileLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -170,7 +170,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.EXEC_LOAD_EVENT: {
-			logger.info("EXEC_LOAD_EVENT");
+//			logger.info("EXEC_LOAD_EVENT");
 			ExecuteLoadLogEvent event = new ExecuteLoadLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -178,7 +178,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.START_EVENT_V3: {
-			logger.info("START_EVENT_V3");
+//			logger.info("START_EVENT_V3");
 			/* This is sent only by MySQL <=4.x */
 			StartLogEventV3 event = new StartLogEventV3(header, buffer,
 					descriptionEvent);
@@ -187,7 +187,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.STOP_EVENT: {
-			logger.info("STOP_EVENT");
+//			logger.info("STOP_EVENT");
 			StopLogEvent event = new StopLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -195,7 +195,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.INTVAR_EVENT: {
-			logger.info("INTVAR_EVENT");
+//			logger.info("INTVAR_EVENT");
 			IntvarLogEvent event = new IntvarLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -203,7 +203,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.RAND_EVENT: {
-			logger.info("RAND_EVENT");
+//			logger.info("RAND_EVENT");
 			RandLogEvent event = new RandLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -211,7 +211,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.USER_VAR_EVENT: {
-			logger.info("USER_VAR_EVENT");
+//			logger.info("USER_VAR_EVENT");
 			UserVarLogEvent event = new UserVarLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -219,7 +219,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.FORMAT_DESCRIPTION_EVENT: {
-			logger.info("FORMAT_DESCRIPTION_EVENT");
+//			logger.info("FORMAT_DESCRIPTION_EVENT");
 			descriptionEvent = new FormatDescriptionLogEvent(header, buffer,
 					descriptionEvent);
 			context.setDescription(descriptionEvent);
@@ -252,7 +252,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.EXECUTE_LOAD_QUERY_EVENT: {
-			logger.info("EXECUTE_LOAD_QUERY_EVENT");
+//			logger.info("EXECUTE_LOAD_QUERY_EVENT");
 			ExecuteLoadQueryLogEvent event = new ExecuteLoadQueryLogEvent(
 					header, buffer, descriptionEvent);
 			/* updating position in context */
@@ -260,7 +260,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.INCIDENT_EVENT: {
-			logger.info("INCIDENT_EVENT");
+//			logger.info("INCIDENT_EVENT");
 			IncidentLogEvent event = new IncidentLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -268,7 +268,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.HEARTBEAT_LOG_EVENT: {
-			logger.info("HEARTBEAT_LOG_EVENT");
+//			logger.info("HEARTBEAT_LOG_EVENT");
 			HeartbeatLogEvent event = new HeartbeatLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -276,7 +276,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.IGNORABLE_LOG_EVENT: {
-			logger.info("IGNORABLE_LOG_EVENT");
+//			logger.info("IGNORABLE_LOG_EVENT");
 			IgnorableLogEvent event = new IgnorableLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -284,7 +284,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.ROWS_QUERY_LOG_EVENT: {
-			logger.info("ROWS_QUERY_LOG_EVENT");
+//			logger.info("ROWS_QUERY_LOG_EVENT");
 			RowsQueryLogEvent event = new RowsQueryLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -292,7 +292,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.WRITE_ROWS_EVENT: {
-			logger.info("WRITE_ROWS_EVENT");
+//			logger.info("WRITE_ROWS_EVENT");
 			RowsLogEvent event = new WriteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -301,7 +301,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.UPDATE_ROWS_EVENT: {
-			logger.info("UPDATE_ROWS_EVENT");
+//			logger.info("UPDATE_ROWS_EVENT");
 			RowsLogEvent event = new UpdateRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -310,7 +310,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.DELETE_ROWS_EVENT: {
-			logger.info("DELETE_ROWS_EVENT");
+//			logger.info("DELETE_ROWS_EVENT");
 			RowsLogEvent event = new DeleteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -320,7 +320,7 @@ public class BinlogEvent implements Serializable {
 		}
 		case BinlogEvent.GTID_LOG_EVENT:
 		case BinlogEvent.ANONYMOUS_GTID_LOG_EVENT: {
-			logger.info("ANONYMOUS_GTID_LOG_EVENT");
+//			logger.info("ANONYMOUS_GTID_LOG_EVENT");
 			GtidLogEvent event = new GtidLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
@@ -328,7 +328,7 @@ public class BinlogEvent implements Serializable {
 			return event;
 		}
 		case BinlogEvent.PREVIOUS_GTIDS_LOG_EVENT: {
-			logger.info("PREVIOUS_GTIDS_LOG_EVENT");
+//			logger.info("PREVIOUS_GTIDS_LOG_EVENT");
 			PreviousGtidsLogEvent event = new PreviousGtidsLogEvent(header,
 					buffer, descriptionEvent);
 			/* updating position in context */
@@ -342,7 +342,7 @@ public class BinlogEvent implements Serializable {
 			 * and continue.
 			 */
 			if ((buffer.getUint16(BinlogEvent.FLAGS_OFFSET) & BinlogEvent.LOG_EVENT_IGNORABLE_F) > 0) {
-				logger.info("LOG_EVENT_IGNORABLE_F");
+//				logger.info("LOG_EVENT_IGNORABLE_F");
 				IgnorableLogEvent event = new IgnorableLogEvent(header, buffer,
 						descriptionEvent);
 				/* updating position in context */

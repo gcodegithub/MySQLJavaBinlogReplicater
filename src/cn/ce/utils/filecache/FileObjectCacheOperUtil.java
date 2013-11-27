@@ -36,7 +36,7 @@ public class FileObjectCacheOperUtil {
 		if (!isSaved) {
 			throw new Exception("Error:无法持久化文件，请检查读写权限、文件路径!");
 		}
-		logger.info("将对象" + t + "序列化到文件:" + fullPath);
+		//logger.info("将对象" + t + "序列化到文件:" + fullPath);
 		// 持久化后纳入缓存
 		FileObjectCacheManager.setCGInfoDescByCache(fullPath, t);
 	}
@@ -52,7 +52,7 @@ public class FileObjectCacheOperUtil {
 		T fileObject = (T) FileObjectCacheManager
 				.getFileObjectByCache(fullPath);
 		if (fileObject != null) {
-			logger.debug("从缓存中返回的对象为" + fileObject + "对应路径为：" + fullPath);
+			//logger.debug("从缓存中返回的对象为" + fileObject + "对应路径为：" + fullPath);
 			return (T) fileObject;
 		}
 		// 缓存中不存在或者缓存中内容过期，就从文件中解析
@@ -74,7 +74,7 @@ public class FileObjectCacheOperUtil {
 		// 解析完成后缓存该对象对对象进行校验
 		converter.validateConvert(fileObject);
 		FileObjectCacheManager.setCGInfoDescByCache(fullPath, fileObject);
-		logger.info("解析" + fullPath + "返回的对象为" + fileObject);
+		//logger.info("解析" + fullPath + "返回的对象为" + fileObject);
 		return (T) fileObject;
 	}
 }

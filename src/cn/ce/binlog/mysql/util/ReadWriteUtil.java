@@ -11,6 +11,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 import cn.ce.binlog.mysql.pack.IPacket;
+import cn.ce.binlog.mysql.parse.SocketUnexpectedEndException;
 
 public class ReadWriteUtil {
 	public static final long NULL_LENGTH = -1;
@@ -251,7 +252,7 @@ public class ReadWriteUtil {
 		while (buffer.hasRemaining()) {
 			int readNum = ch.read(buffer);
 			if (readNum == -1) {
-				throw new IOException("SocketChannel Unexpected End");
+				throw new SocketUnexpectedEndException("SocketChannel Unexpected End");
 			}
 		}
 		return buffer;

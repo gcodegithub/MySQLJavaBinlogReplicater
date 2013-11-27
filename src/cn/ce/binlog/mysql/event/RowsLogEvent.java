@@ -286,7 +286,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 			// 因为online ddl没有对应表名的alter语法，所以不会有clear cache的操作
 			tableMeta = tableMetaCache.getTableMeta(
 					this.getTable().getDbName(),
-					this.getTable().getTableName(), false);// 强制重新获取一次
+					this.getTable().getTableName(), true);// 
 			if (tableMeta == null) {
 				throw new Exception("not found [" + this.getTable().getDbName()
 						+ "." + this.getTable().getTableName()

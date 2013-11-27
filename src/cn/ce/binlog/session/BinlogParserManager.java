@@ -34,7 +34,6 @@ public class BinlogParserManager {
 
 	public static void save2file(MysqlConnector c, String slaveId,
 			BinlogParseSession bps, BinParseResultVO resVo) throws Throwable {
-
 		BuzzWorker worker = new BuzzWorker(bps, resVo, consumerDao, "save2File");
 		BinlogParserManager.doBuzzToExePool(worker);
 
@@ -133,7 +132,7 @@ public class BinlogParserManager {
 			boolean isNeedWait) throws Exception {
 		BinlogParseSession parseSession = BinlogParserManager.sessionMap
 				.get(slaveId.toString());
-		MySQLEventConsumer.event2vo(parseSession, resVo, isNeedWait);
+		consumerDao.event2vo(parseSession, resVo, isNeedWait);
 		if (StringUtils.isBlank(resVo.getBinlogfilenameNext())
 				|| resVo.getBinlogPositionNext() == null) {
 			throw new Exception("Error:无法定位检查点位置，无法保存检查点状态");
@@ -151,8 +150,8 @@ public class BinlogParserManager {
 		String binlogPositionKey = slaveId + ".binlogPosition";
 		String binlogfileName = resVo.getBinlogfilenameNext();
 		String pos = resVo.getBinlogPositionNext().toString();
-		ProFileUtil.modifyOrCreatePropertiesWithFileLock(posFileAbspath,
-				filenameKey, binlogfileName, false, false);
+		ProFileUtil.modifyPropertieWithOutFileLock(posFileAbspath, filenameKey,
+				binlogfileName, false, false);
 		ProFileUtil.modifyOrCreatePropertiesWithFileLock(posFileAbspath,
 				binlogPositionKey, pos, false, false);
 	}

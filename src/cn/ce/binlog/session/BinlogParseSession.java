@@ -1,5 +1,6 @@
 package cn.ce.binlog.session;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -10,7 +11,6 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import cn.ce.binlog.mysql.event.BinlogEvent;
 import cn.ce.binlog.mysql.event.FormatDescriptionLogEvent;
 import cn.ce.binlog.mysql.event.TableMapLogEvent;
-import cn.ce.binlog.mysql.event.XidLogEvent;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.cons.Const;
@@ -27,9 +27,10 @@ public class BinlogParseSession {
 	private Thread parseThread;
 	private Thread consumerThread;
 	private Map<Long, String> tableEventSeriFullPathMap = new HashMap<Long, String>();
-
+	private volatile boolean isConsuInSleep = false;
+	private final int queueSize = 500;
 	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
-			200);
+			queueSize);
 
 	public final BinlogPosition getLogPosition() {
 		return logPosition;
@@ -49,16 +50,32 @@ public class BinlogParseSession {
 		return eventVOQueue.size();
 	}
 
-	public void addEventVOQueue(BinlogEvent binlogEvent) {
-		eventVOQueue.offer(binlogEvent);
-		if (binlogEvent instanceof XidLogEvent && this.consumerThread != null) {
-			if (this.consumerThread.isInterrupted() == false) {
-				this.consumerThread.interrupt();
-			}
+	public void addEventVOQueue(BinlogEvent binlogEvent) throws Exception {
+		Long lastMem = BeanUtil.getLastAvailMem();
+		System.out.println("--------------------可用内存还剩余(M)：" + lastMem / 1024
+				/ 1024);
+		if (!c.isConnected()) {
+			throw new RuntimeException("MySQL Master 连接中断,c:" + c);
 		}
+		System.out.println("-------isConsuInSleep:" + isConsuInSleep);
+		int size = this.getEventVOQueueSize();
+		System.out.println("-------offer--队列中元素个数:" + size);
+		if (isConsuInSleep && size > 20) {
+			this.consumerThread.interrupt();
+		}
+		if (this.queueSize - size > 20) {
+			eventVOQueue.offer(binlogEvent);
+		} else {
+			consumerThread.sleep(20);
+			eventVOQueue.offer(binlogEvent);
+		}
+
 	}
 
 	public BinlogEvent getEventVOQueue() throws InterruptedException {
+		if (!c.isConnected()) {
+			throw new RuntimeException("MySQL Master 连接中断,c:" + c);
+		}
 		return eventVOQueue.take();
 	}
 
@@ -74,8 +91,10 @@ public class BinlogParseSession {
 		Long tableId = mapEvent.getTableId();
 		mapOfTable.put(Long.valueOf(tableId), mapEvent);
 		String serFullPath = this.getTableMapLogEventSeriFullName(tableId);
-		BeanUtil.seriObject2File(serFullPath, mapEvent);
-
+		File serFile = new File(serFullPath);
+		if (!serFile.exists()) {
+			BeanUtil.seriObject2File(serFullPath, mapEvent);
+		}
 	}
 
 	public final TableMapLogEvent getTable(final long tableId) throws Exception {
@@ -157,6 +176,18 @@ public class BinlogParseSession {
 		}
 		String tableEventSeriFullPath = tableEventSeriFullPathMap.get(tableId);
 		return tableEventSeriFullPath;
+
+	}
+
+	public boolean isConsuInSleep() {
+		return isConsuInSleep;
+	}
+
+	public void setConsuInSleep(boolean isConsuInSleep) {
+		this.isConsuInSleep = isConsuInSleep;
+	}
+
+	public static void main(String[] args) {
 
 	}
 }

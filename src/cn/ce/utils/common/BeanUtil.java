@@ -32,10 +32,21 @@ public class BeanUtil {
 
 	private final static Log logger = LogFactory.getLog(BeanUtil.class);
 
+	public static Long getLastAvailMem() {
+		Long free = Runtime.getRuntime().freeMemory();
+		Long total = Runtime.getRuntime().totalMemory();
+		Long max = Runtime.getRuntime().maxMemory();
+		if (total.equals(max)) {
+			return free;
+		}
+		return max - total + free;
+	}
+
 	public static void seriObject2File(String fileFullPath, Serializable obj)
 			throws Exception {
+		File outFile = new File(fileFullPath);
 		ObjectOutputStream output = new ObjectOutputStream(
-				new FileOutputStream(new File(fileFullPath)));
+				new FileOutputStream(outFile));
 		output.writeObject(obj);
 		IOUtils.closeQuietly(output);
 		ProFileUtil.checkIsExist(fileFullPath, true);

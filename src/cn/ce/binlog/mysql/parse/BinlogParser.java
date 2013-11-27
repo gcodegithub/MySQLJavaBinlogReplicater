@@ -16,6 +16,8 @@ public class BinlogParser {
 
 	public static void startDump(final BinlogParseSession parseSession,
 			final BinParseResultVO resVo) throws Throwable {
+		System.out.println("---------BinlogParser Thread----------------"
+				+ Thread.currentThread());
 		// System.out
 		// .println("重要：数据库必须绑定IP若更改数据库IP后需要同步更改Slave端IP设置，需要清除之前該SlaveId的對應檢查點設置文件");
 		MysqlConnector c = parseSession.getC();
@@ -34,12 +36,23 @@ public class BinlogParser {
 			System.out.println("---------BinlogParser发送解析请求----------------");
 			MySQLDumper.sendBinlogDump(c, parseSession);
 			parseSession.setParseThread(Thread.currentThread());
+			TableMetaCache tableMetaCache = new TableMetaCache(nc);
+			parseSession.setTableMetaCache(tableMetaCache);
 			while (c.isConnected()) {
-				TableMetaCache tableMetaCache = new TableMetaCache(nc);
-				parseSession.setTableMetaCache(tableMetaCache);
-				MySQLDumper.receiveBinlogDump(c, parseSession);
-				System.out
-						.println("---------BinlogParser处理完一次输入包----------------");
+				try {
+					MySQLDumper.receiveBinlogDump(c, parseSession);
+					System.out
+							.println("---------BinlogParser处理完一次输入包----------------");
+				} catch (SocketUnexpectedEndException ex) {
+					String err = ex.getMessage();
+					ex.printStackTrace();
+					c.reconnect();
+					Alarm.sendAlarmEmail(
+							Const.sysconfigFileClasspath,
+							"警告:MySQL Master网络接口超时断掉",
+							err + "\n" + parseSession.toString() + "\n"
+									+ resVo.toString());
+				}
 			}
 		} catch (Throwable e) {
 			String err = e.getMessage();

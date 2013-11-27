@@ -1,13 +1,14 @@
 package cn.ce.utils.filecache;
 
 import java.io.InputStream;
-import java.util.Properties;
+
+import cn.ce.utils.common.PropertiesExtend;
 
 public class PropertiesConverter implements IStream2FileObjectCacheConverter {
 
-	public Properties stream2FileObject(InputStream inputStream)
+	public PropertiesExtend stream2FileObject(InputStream inputStream)
 			throws Exception {
-		Properties p = new Properties();
+		PropertiesExtend p = new PropertiesExtend();
 		p.load(inputStream);
 		return p;
 	}

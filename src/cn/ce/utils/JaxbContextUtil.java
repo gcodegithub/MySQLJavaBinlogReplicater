@@ -1,7 +1,6 @@
 package cn.ce.utils;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -24,19 +23,20 @@ import java.util.UUID;
 
 public class JaxbContextUtil {
 
-	public static void marshall(Object toSerial, String targetFilePath)
-			throws IOException {
+	public static void marshall(JAXBContext ctx, Object toSerial,
+			String targetFilePath, boolean isFormat) throws IOException,
+			JAXBException {
 		File file = new File(targetFilePath);
 		FileOutputStream fo = new FileOutputStream(file);
-		JaxbContextUtil.marshall(toSerial, fo, null);
+		JaxbContextUtil.marshall(ctx, toSerial, fo, null, isFormat);
 	}
 
-	public static void marshall(Object toSerial, OutputStream out,
-			String xsdName) throws IOException {
+	private static void marshall(JAXBContext ctx, Object toSerial,
+			OutputStream out, String xsdName, boolean isFormat)
+			throws IOException {
 		try {
-			JAXBContext ctx = JAXBContext.newInstance(toSerial.getClass());
 			Marshaller m = ctx.createMarshaller();
-			m.setProperty("jaxb.formatted.output", true);
+			m.setProperty("jaxb.formatted.output", isFormat);
 			if (!StringUtils.isBlank(xsdName)) {
 				m.setProperty("jaxb.noNamespaceSchemaLocation", xsdName);
 			}
@@ -49,14 +49,21 @@ public class JaxbContextUtil {
 		}
 	}
 
+	private static void marshall(Object toSerial, OutputStream out,
+			String xsdName, boolean isFormat) throws IOException, JAXBException {
+		JAXBContext ctx = JAXBContext.newInstance(toSerial.getClass());
+		JaxbContextUtil.marshall(ctx, toSerial, out, xsdName, isFormat);
+	}
+
 	public static String marshallToString(Object toSerial, String xsdName,
-			String encoding) throws IOException {
+			String encoding, boolean isFormat) throws IOException,
+			JAXBException {
 		// ------------------------------------生成xml字符串
 
 		File tempFile = new File("engin_marshallToString.tmp"
 				+ System.currentTimeMillis() + UUID.randomUUID());
 		FileOutputStream out = new FileOutputStream(tempFile);
-		JaxbContextUtil.marshall(toSerial, out, xsdName);
+		JaxbContextUtil.marshall(toSerial, out, xsdName, isFormat);
 		String xmlInfo = FileUtils.readFileToString(tempFile, encoding);
 		tempFile.delete();
 		return xmlInfo;
