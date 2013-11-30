@@ -77,6 +77,7 @@ public final class FormatDescriptionLogEvent extends StartLogEventV3 {
 	public EventVO genEventVo() {
 		FormatDescriptionLogEventVO vo = new FormatDescriptionLogEventVO();
 		vo.setLogPos(header.getLogPos());
+		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
 		vo.setEventTypeString(this.getTypeName(this.getHeader().getType()));
@@ -102,9 +103,8 @@ public final class FormatDescriptionLogEvent extends StartLogEventV3 {
 		}
 		numberOfEventTypes = buffer.limit()
 				- (LOG_EVENT_MINIMAL_HEADER_LEN + ST_COMMON_HEADER_LEN_OFFSET + 1);
-		if (logger.isInfoEnabled())
-			logger.info("common_header_len= " + commonHeaderLen
-					+ ", number_of_event_types= " + numberOfEventTypes);
+//		if (logger.isInfoEnabled())
+//			logger.info("common_header_len= " + commonHeaderLen	+ ", number_of_event_types= " + numberOfEventTypes);
 
 		// buffer.position(LOG_EVENT_MINIMAL_HEADER_LEN
 		// + ST_COMMON_HEADER_LEN_OFFSET + 1);

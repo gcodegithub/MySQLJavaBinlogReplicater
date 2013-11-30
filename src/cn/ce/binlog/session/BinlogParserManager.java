@@ -1,7 +1,7 @@
 package cn.ce.binlog.session;
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -18,9 +18,7 @@ import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.cons.Const;
 import cn.ce.utils.common.ProFileUtil;
 import cn.ce.utils.common.StringUtil;
-import cn.ce.utils.mail.Alarm;
 import cn.ce.web.rest.vo.BinParseResultVO;
-import cn.ce.web.rest.vo.EventVO;
 import cn.ce.web.rest.vo.TokenAuthRes;
 
 public class BinlogParserManager {
@@ -50,8 +48,10 @@ public class BinlogParserManager {
 		if (StringUtil.isBlank(tokenInFile)) {
 			// 文件中不存在slaveId的token
 			tokenInFile = String.valueOf(System.currentTimeMillis());
+			Map kv = new HashMap();
+			kv.put(key, tokenInFile);
 			ProFileUtil.modifyOrCreatePropertiesWithFileLock(tokenFileAbspath,
-					key, tokenInFile, false, false);
+					kv, false, false);
 			res.setMsgDetail("first visit,generate new token.");
 			res.setResCode(TokenAuthRes.NEW_TOKEN);
 			res.setNewToken(tokenInFile);
@@ -92,7 +92,7 @@ public class BinlogParserManager {
 					"Error：one slaveId,one request,已经有线程正在处理该slaveId请求,slaveId="
 							+ slaveId);
 		}
-		logger.info("处理开始");
+		// logger.info("处理开始");
 		String filenameKey = slaveId + ".filenameKey";
 		String binlogPositionKey = slaveId + ".binlogPosition";
 		BinlogParserManager.sessionMap.put(slaveId.toString(), parseSession);
@@ -109,7 +109,7 @@ public class BinlogParserManager {
 					binlogPositionKey);
 			if (binlogfilename == null || binlogPosition == null) {
 				// throw new Exception("Error:无法取得日志检查点信息");
-				System.out.println("没有输入检查点信息，从头开始");
+				// System.out.println("没有输入检查点信息，从头开始");
 				// 默认从头开始
 				binlogfilename = "mysql-bin.000001";
 				binlogPosition = "4";
@@ -150,10 +150,11 @@ public class BinlogParserManager {
 		String binlogPositionKey = slaveId + ".binlogPosition";
 		String binlogfileName = resVo.getBinlogfilenameNext();
 		String pos = resVo.getBinlogPositionNext().toString();
-		ProFileUtil.modifyPropertieWithOutFileLock(posFileAbspath, filenameKey,
-				binlogfileName, false, false);
-		ProFileUtil.modifyOrCreatePropertiesWithFileLock(posFileAbspath,
-				binlogPositionKey, pos, false, false);
+		Map<String, String> keyvalue = new HashMap<String, String>();
+		keyvalue.put(filenameKey, binlogfileName);
+		keyvalue.put(binlogPositionKey, pos);
+		ProFileUtil.modifyPropertieWithOutFileLock(posFileAbspath, keyvalue,
+				false, false);
 	}
 
 	private static void doBuzzToExePool(
@@ -171,7 +172,7 @@ public class BinlogParserManager {
 		try {
 			long slaveId = 1113L;
 			BinlogParserManager.getToken(slaveId, res);
-			logger.info("auth res:" + res);
+			// logger.info("auth res:" + res);
 
 			String binlogfilename = "mysql-bin.000001";
 			String binlogPosition = "107";
@@ -186,7 +187,7 @@ public class BinlogParserManager {
 					serverPort), username, password);
 			BinlogParserManager.startDumpToSession(slaveId, binlogfilename,
 					binlogPosition, c, bps, resVO);
-			logger.info("parseRes vo:" + resVO);
+			// logger.info("parseRes vo:" + resVO);
 			System.out.println("----------OVER------------");
 		} catch (Throwable e) {
 			e.printStackTrace();

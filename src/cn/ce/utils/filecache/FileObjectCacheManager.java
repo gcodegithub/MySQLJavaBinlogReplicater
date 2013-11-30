@@ -36,7 +36,7 @@ public class FileObjectCacheManager {
 		// 缓存过期，清除缓存
 		if ((nowModifiedTime != lastModifiedTime) || (nowSize != lastSize)) {
 			cacheMap.getMap().remove(inFullFilePath);
-			logger.info("缓存中的对象" + cacheObject + "已经过期，从缓存中清除");
+			//logger.info("缓存中的对象" + cacheObject + "已经过期，从缓存中清除");
 			return null;
 		}
 		return (T) cacheObject;
@@ -54,8 +54,7 @@ public class FileObjectCacheManager {
 		fileObjectDesc.setLastSize(nowSize);
 		fileObjectDesc.setLastModifiedTime(nowModifiedTime);
 		cacheMap.getMap().put(fileFullPath, fileObjectDesc);
-		logger.info("MSG:对" + fileObject + "对象进行缓存，对应fileFullPath="
-				+ fileFullPath);
+		//logger.info("MSG:对" + fileObject + "对象进行缓存，对应fileFullPath="+ fileFullPath);
 	}
 
 	// -----------------------------------私有

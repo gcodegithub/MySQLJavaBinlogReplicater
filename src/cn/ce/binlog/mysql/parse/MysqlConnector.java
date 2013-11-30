@@ -75,7 +75,7 @@ public class MysqlConnector implements Cloneable {
 			channel = SocketChannel.open();
 			try {
 				setChannel(channel, soTimeout);
-				logger.info("connect MysqlConnection to " + address);
+				// logger.info("connect MysqlConnection to " + address);
 				channel.connect(address);
 				HandshakeResPacket handshakeRes = handshake(channel);
 				sendAuth(channel, handshakeRes);
@@ -103,7 +103,7 @@ public class MysqlConnector implements Cloneable {
 				if (channel != null) {
 					channel.close();
 				}
-				logger.info("disConnect Mysql to " + address);
+				// logger.info("disConnect Mysql to " + address);
 			} catch (Exception e) {
 				throw new RuntimeException("disconnect " + this.address
 						+ " failure", e);
@@ -111,10 +111,14 @@ public class MysqlConnector implements Cloneable {
 		} else {
 			logger.warn("the channel " + this.address + " is not connected");
 		}
+		if (oldNc != null) {
+			oldNc.disconnect();
+		}
+
 	}
 
 	public void reconnect() throws IOException {
-		System.out.println("-----------重新链接---------------");
+		// System.out.println("-----------重新链接---------------");
 		disconnect();
 		connect();
 	}

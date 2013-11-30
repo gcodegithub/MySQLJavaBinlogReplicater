@@ -100,15 +100,15 @@ public class TableMeta {
 		}
 
 		public boolean isUnsigned() {
-			return StringUtils.containsIgnoreCase(columnType, "unsigned");
+			return "unsigned".equalsIgnoreCase(columnType);
 		}
 
 		public boolean isKey() {
-			return StringUtils.equalsIgnoreCase(iskey, "PRI");
+			return "PRI".equalsIgnoreCase(iskey);
 		}
 
 		public boolean isNullable() {
-			return StringUtils.equalsIgnoreCase(isNullable, "YES");
+			return "YES".equalsIgnoreCase(isNullable);
 		}
 
 		public String toString() {

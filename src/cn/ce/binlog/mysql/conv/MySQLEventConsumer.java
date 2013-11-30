@@ -30,17 +30,9 @@ import cn.ce.web.rest.vo.RotateLogEventVO;
 public class MySQLEventConsumer {
 	private final static Log logger = LogFactory
 			.getLog(MySQLEventConsumer.class);
-	private static JAXBContext binParseResultVOJaxbCTX = null;
-	static {
-		try {
-			binParseResultVOJaxbCTX = JAXBContext
-					.newInstance(BinParseResultVO.class);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-	}
 
 	private final AtomicLong atlong = new AtomicLong(0);
+	private FilePresistence fp = new FilePresistence();
 
 	public void save2File(final BinlogParseSession bps,
 			final BinParseResultVO resVo) {
@@ -52,35 +44,35 @@ public class MySQLEventConsumer {
 				bps.setConsuInSleep(false);
 				bps.setConsumerThread(Thread.currentThread());
 				int len = bps.getEventVOQueueSize();
-				System.out.println("-------save2File--队列中元素个数:" + len);
+				// System.out.println("-------save2File--队列中元素个数:" + len);
 				try {
 					if (len > 0) {
-						System.out.println("------------有增量数据，準備解析,Thread:"
-								+ Thread.currentThread());
+						// System.out.println("------------有增量数据，準備解析,Thread:"
+						// + Thread.currentThread());
 						this.event2vo(bps, resVo, isNeedWait);
-						System.out.println("-------event2vo OVER");
-						this.FilePersis(resVo, c.getServerhost(),
+						// System.out.println("-------event2vo OVER");
+						fp.FilePersis(resVo, c.getServerhost(),
 								bps.getSlaveId());
-						System.out.println("-------FilePersis OVER");
+						// System.out.println("-------FilePersis OVER");
 						BinlogParserManager.saveCheckPoint(resVo, new Long(
 								slaveId));
-						System.out.println("-------saveCheckPoint OVER");
+						// System.out.println("-------saveCheckPoint OVER");
 						resVo.setEventVOList(new ArrayList<EventVO>());
 					} else {
-						System.out.println("------------没有增量数据供解析准备睡觉了,Thread:"
-								+ Thread.currentThread());
+						// System.out.println("------------没有增量数据供解析准备睡觉了,Thread:"
+						// + Thread.currentThread());
 						bps.setConsuInSleep(true);
 						Thread.sleep(10 * 1000);
-						System.out
-								.println("------------睡到自然醒，在看看有没有增量数据,Thread:"
-										+ Thread.currentThread());
+						// System.out
+						// .println("------------睡到自然醒，在看看有没有增量数据,Thread:"
+						// + Thread.currentThread());
 						bps.setConsuInSleep(false);
 					}
 				} catch (InterruptedException ex) {
 					bps.setConsuInSleep(false);
 					Thread.interrupted();
-					System.out.println("------------增量数据突然来到，好梦被打醒,Thread:"
-							+ Thread.currentThread());
+					// System.out.println("------------增量数据突然来到，好梦被打醒,Thread:"
+					// + Thread.currentThread());
 				}
 			}// while end
 		} catch (Throwable e) {
@@ -90,78 +82,11 @@ public class MySQLEventConsumer {
 			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
 					+ bps.toString() + "\n" + resVo.toString());
 		} finally {
-			System.out
-					.println("---------MySQLEventConsumer持久化文件线程结束!!----------------");
+			// System.out
+			// .println("---------MySQLEventConsumer持久化文件线程结束!!----------------");
 			c.disconnect();
 			bps.setConsumerThread(null);
 		}
-	}
-
-	public void FilePersis(BinParseResultVO resVo, String serverhost,
-			Long slaveId) throws Exception {
-		if (resVo.getEventVOList().size() == 0) {
-			return;
-		}
-
-		String absDirPath = ProFileUtil
-				.findMsgString(Const.sysconfigFileClasspath,
-						"bootstrap.mysql.vo.filepool.dir");
-		absDirPath = absDirPath + "/" + serverhost + "_" + slaveId;
-		//
-		String binfilename_end = resVo.getBinlogfilenameNext();
-		String pos_end = resVo.getBinlogPositionNext().toString();
-		//
-		String posFileAbspath = ProFileUtil.findMsgString(
-				Const.sysconfigFileClasspath,
-				"binlogparse.checkpoint.fullpath.file");
-		String filenameKey = slaveId + ".filenameKey";
-		String binlogPositionKey = slaveId + ".binlogPosition";
-		String binfilename_check = ProFileUtil.getValueFromProAbsPath(
-				posFileAbspath, filenameKey);
-		String pos_check = ProFileUtil.getValueFromProAbsPath(posFileAbspath,
-				binlogPositionKey);
-		if (binfilename_end.equals(binfilename_check)
-				&& pos_end.equals(pos_check)) {
-			System.out.println("------------------数据的包内容和之前重复，不用持久化到文件");
-			return;
-		}
-
-		binfilename_end = this.getbinfileSeq(binfilename_end);
-
-		//
-		// EventVO evo = resVo.getEventVOList().get(0);
-		// if (evo instanceof RotateLogEventVO) {
-		// String binfilename_vo = ((RotateLogEventVO) evo).getFilename();
-		// Long pos_vo = ((RotateLogEventVO) evo).getFileBeginPosition();
-		// if (binfilename_end.equals(binfilename_vo)
-		// && pos_end.equals(pos_vo)) {
-		// System.out.println("------------------数据的包内容和之前重复，不用持久化到文件");
-		// return;
-		// }
-		// }
-
-		String tmpFileNameFullPath = absDirPath + "/" + binfilename_end + "_"
-				+ pos_end + ".tmp";
-		File target = new File(tmpFileNameFullPath);
-		FileUtils.deleteQuietly(target);
-		FileUtils.touch(target);
-
-		// JaxbContextUtil.marshall(resVo, tmpFileNameFullPath);
-		// BinParseResultVOJaxbCTX
-		JaxbContextUtil.marshall(binParseResultVOJaxbCTX, resVo,
-				tmpFileNameFullPath, false);
-		ProFileUtil.checkIsExist(tmpFileNameFullPath, true);
-		String fileNameFullPath = absDirPath + "/" + binfilename_end + "_"
-				+ pos_end + ".xml";
-		FileUtils.moveFile(new File(tmpFileNameFullPath), new File(
-				fileNameFullPath));
-		ProFileUtil.checkIsExist(fileNameFullPath, true);
-		// this.tooManyFilesWarn(absDirPath);
-	}
-
-	private String getbinfileSeq(String fileBinSeq) {
-		String seq = fileBinSeq.substring("mysql-bin.".length());
-		return seq;
 	}
 
 	public void event2vo(BinlogParseSession parseSession,
@@ -174,26 +99,39 @@ public class MySQLEventConsumer {
 
 		for (int i = 1; i <= len; i++) {
 			BinlogEvent e = parseSession.getEventVOQueue();
+			EventVO vo = e.genEventVo();
+			if (i == 1) {
+				resVo.setBinlogfilenameBegin(e.getHeader().getBinlogfilename());
+				resVo.setBinlogPositionBegin(e.getLogPos() == 0 ? 4 : e
+						.getLogPos());
+			}
 			// boolean isDrop = this.isTheClazz(e.getClass());
 			// if (isDrop) {
 			// continue;
 			// }
-			EventVO vo = e.genEventVo();
 			resVo.addEventVOList(vo);
-			// binfile记录
-			if (e instanceof RotateLogEvent) {
-				String binfilename = ((RotateLogEvent) e).getFilename();
-				resVo.setBinlogfilenameNext(binfilename);
-				if (StringUtils.isBlank(binfilename)) {
-					throw new Exception("包出现解析错误，RotateLogEvent没有binfilename："
-							+ binfilename);
-				}
+
+			String binfn = e.getHeader().getBinlogfilename();
+
+			if (!StringUtils.isBlank(binfn)) {
+				resVo.setBinlogfilenameNext(binfn);
 			}
-			// pos 记录
 			if (e.getLogPos() >= 4L) {
 				Long pos = e.getLogPos();
 				resVo.setBinlogPositionNext(pos);
 			}
+			// binfile记录
+			// if (e instanceof RotateLogEvent) {
+			// String binfilename = ((RotateLogEvent) e).getFilename();
+			// resVo.setBinlogfilenameNext(binfilename);
+			// if (StringUtils.isBlank(binfilename)) {
+			// throw new Exception("包出现解析错误，RotateLogEvent没有binfilename："
+			// + binfilename);
+			// }
+
+			// }
+
+			// pos 记录
 
 		}
 	}
@@ -203,7 +141,7 @@ public class MySQLEventConsumer {
 		File[] subFiles = dir.listFiles();
 		Integer filenum = subFiles.length;
 		String msg = "文件夹" + dirfullPath + "下文件数目:" + filenum;
-		System.out.println("------------------" + msg);
+		// System.out.println("------------------" + msg);
 		String warnFileNum = ProFileUtil.findMsgString(
 				Const.sysconfigFileClasspath,
 				"consumer.toomanyfile.warnfilenum");
@@ -258,7 +196,7 @@ public class MySQLEventConsumer {
 		try {
 			MySQLEventConsumer con = new MySQLEventConsumer();
 			Object event = new String("aa");
-			System.out.println(con.isTheClazz(event.getClass()));
+			// System.out.println(con.isTheClazz(event.getClass()));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

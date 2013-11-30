@@ -10,6 +10,7 @@ public final class XidLogEvent extends BinlogEvent {
 	public EventVO genEventVo() {
 		XidLogEventVO vo = new XidLogEventVO();
 		vo.setLogPos(header.getLogPos());
+		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
 		vo.setEventTypeString(this.getTypeName(this.getHeader().getType()));

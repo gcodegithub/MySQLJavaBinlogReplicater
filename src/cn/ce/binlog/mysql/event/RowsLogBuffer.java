@@ -5,7 +5,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.BitSet;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -271,7 +270,7 @@ public final class RowsLogBuffer {
 			// XXX: How to check signed / unsigned?
 			// value = unsigned ? Long.valueOf(buffer.getUint32()) :
 			// Integer.valueOf(buffer.getInt32());
-			value = Integer.valueOf(buffer.getInt32());
+			value = buffer.getInt32();
 			javaType = Types.INTEGER;
 			length = 4;
 			break;
@@ -280,7 +279,7 @@ public final class RowsLogBuffer {
 			// XXX: How to check signed / unsigned?
 			// value = Integer.valueOf(unsigned ? buffer.getUint8() :
 			// buffer.getInt8());
-			value = Integer.valueOf(buffer.getInt8());
+			value = buffer.getInt8();
 			javaType = Types.TINYINT; // java.sql.Types.INTEGER;
 			length = 1;
 			break;
@@ -289,7 +288,7 @@ public final class RowsLogBuffer {
 			// XXX: How to check signed / unsigned?
 			// value = Integer.valueOf(unsigned ? buffer.getUint16() :
 			// buffer.getInt16());
-			value = Integer.valueOf((short) buffer.getInt16());
+			value = (short) buffer.getInt16();
 			javaType = Types.SMALLINT; // java.sql.Types.INTEGER;
 			length = 2;
 			break;
@@ -298,7 +297,7 @@ public final class RowsLogBuffer {
 			// XXX: How to check signed / unsigned?
 			// value = Integer.valueOf(unsigned ? buffer.getUint24() :
 			// buffer.getInt24());
-			value = Integer.valueOf(buffer.getInt24());
+			value = buffer.getInt24();
 			javaType = Types.INTEGER;
 			length = 3;
 			break;
@@ -307,7 +306,7 @@ public final class RowsLogBuffer {
 			// XXX: How to check signed / unsigned?
 			// value = unsigned ? buffer.getUlong64()) :
 			// Long.valueOf(buffer.getLong64());
-			value = Long.valueOf(buffer.getLong64());
+			value = buffer.getLong64();
 			javaType = Types.BIGINT; // Types.INTEGER;
 			length = 8;
 			break;
@@ -333,13 +332,13 @@ public final class RowsLogBuffer {
 			break;
 		}
 		case BinlogEvent.MYSQL_TYPE_FLOAT: {
-			value = Float.valueOf(buffer.getFloat32());
+			value = buffer.getFloat32();
 			javaType = Types.REAL; // Types.FLOAT;
 			length = 4;
 			break;
 		}
 		case BinlogEvent.MYSQL_TYPE_DOUBLE: {
-			value = Double.valueOf(buffer.getDouble64());
+			value = buffer.getDouble64();
 			javaType = Types.DOUBLE;
 			length = 8;
 			break;
@@ -721,7 +720,7 @@ public final class RowsLogBuffer {
 			}
 			// logger.warn("MYSQL_TYPE_ENUM : This enumeration value is "
 			// + "only used internally and cannot exist in a binlog!");
-			value = Integer.valueOf(int32);
+			value = int32;
 			javaType = Types.INTEGER;
 			length = len;
 			break;

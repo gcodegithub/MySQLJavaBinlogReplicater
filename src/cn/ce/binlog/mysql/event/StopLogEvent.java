@@ -13,6 +13,7 @@ public final class StopLogEvent extends BinlogEvent {
 	public EventVO genEventVo() {
 		StopLogEventVO vo = new StopLogEventVO();
 		vo.setLogPos(header.getLogPos());
+		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
 		vo.setEventTypeString(this.getTypeName(this.getHeader().getType()));

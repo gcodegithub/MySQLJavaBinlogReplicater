@@ -87,6 +87,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 	public EventVO genEventVo() {
 		RowEventVO vo = new RowEventVO();
 		vo.setLogPos(header.getLogPos());
+		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
 		vo.setAfterColumnInfo(afterColumnInfo);

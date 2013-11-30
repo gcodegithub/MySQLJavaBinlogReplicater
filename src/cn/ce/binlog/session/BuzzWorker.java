@@ -44,7 +44,7 @@ public class BuzzWorker<R extends BinParseResultVO, S extends BinlogParseSession
 			e.printStackTrace();
 			throw e;
 		}
-		System.out.print(invokeMethodName);
+//		System.out.print(invokeMethodName);
 		return res;
 	}
 }

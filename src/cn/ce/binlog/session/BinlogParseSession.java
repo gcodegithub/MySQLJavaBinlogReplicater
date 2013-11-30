@@ -28,7 +28,7 @@ public class BinlogParseSession {
 	private Thread consumerThread;
 	private Map<Long, String> tableEventSeriFullPathMap = new HashMap<Long, String>();
 	private volatile boolean isConsuInSleep = false;
-	private final int queueSize = 500;
+	private final int queueSize = 80;
 	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
 			queueSize);
 
@@ -51,19 +51,24 @@ public class BinlogParseSession {
 	}
 
 	public void addEventVOQueue(BinlogEvent binlogEvent) throws Exception {
-		Long lastMem = BeanUtil.getLastAvailMem();
-		System.out.println("--------------------可用内存还剩余(M)：" + lastMem / 1024
-				/ 1024);
 		if (!c.isConnected()) {
 			throw new RuntimeException("MySQL Master 连接中断,c:" + c);
 		}
-		System.out.println("-------isConsuInSleep:" + isConsuInSleep);
-		int size = this.getEventVOQueueSize();
-		System.out.println("-------offer--队列中元素个数:" + size);
-		if (isConsuInSleep && size > 20) {
+		Long lastMem = BeanUtil.getLastAvailMem();
+		// System.out.println("--------------------可用内存还剩余(M)：" + lastMem / 1024
+		// / 1024);
+		if (lastMem / 1024 / 1024 < 256) {
+			consumerThread.sleep(20);
 			this.consumerThread.interrupt();
 		}
-		if (this.queueSize - size > 20) {
+		// System.out.println("-------isConsuInSleep:" + isConsuInSleep);
+		int size = this.getEventVOQueueSize();
+//		System.out.println("-------offer--队列中元素个数:" + size + " "
+//				+ System.currentTimeMillis());
+		if (isConsuInSleep && size > 2) {
+			this.consumerThread.interrupt();
+		}
+		if (this.queueSize - size > 10) {
 			eventVOQueue.offer(binlogEvent);
 		} else {
 			consumerThread.sleep(20);

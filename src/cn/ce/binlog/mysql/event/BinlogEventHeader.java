@@ -1,6 +1,5 @@
 package cn.ce.binlog.mysql.event;
 
-
 import java.io.Serializable;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -10,7 +9,7 @@ import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.mysql.util.ReadWriteUtil;
 
-public class BinlogEventHeader implements Serializable{
+public class BinlogEventHeader implements Serializable {
 
 	/**
 	 * 
@@ -32,6 +31,7 @@ public class BinlogEventHeader implements Serializable{
 	 * of the BEGIN, which is logical as rollback may occur), except the COMMIT
 	 * query which has its real offset.
 	 */
+	private String binlogfilename;
 	private long logPos;
 
 	/**
@@ -180,6 +180,14 @@ public class BinlogEventHeader implements Serializable{
 
 	public void setEventHeaderBytes(byte[] eventHeaderBytes) {
 		this.eventHeaderBytes = eventHeaderBytes;
+	}
+
+	public String getBinlogfilename() {
+		return binlogfilename;
+	}
+
+	public void setBinlogfilename(String binlogfilename) {
+		this.binlogfilename = binlogfilename;
 	}
 
 	@Override

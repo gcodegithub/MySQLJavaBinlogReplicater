@@ -8,10 +8,11 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(propOrder = { "logPos", "when", "mysqlServerId", "eventTypeString",
-		"binlogFileName", }, name = "EventVOType")
+@XmlType(propOrder = { "logPos", "binfile", "when", "mysqlServerId",
+		"eventTypeString", "binlogFileName", }, name = "EventVOType")
 public class EventVO {
 	private Long logPos;
+	private String binfile;
 	private Long when;
 	private Long mysqlServerId;
 	private String eventTypeString;
@@ -55,6 +56,14 @@ public class EventVO {
 
 	public void setBinlogFileName(String binlogFileName) {
 		this.binlogFileName = binlogFileName;
+	}
+
+	public String getBinfile() {
+		return binfile;
+	}
+
+	public void setBinfile(String binfile) {
+		this.binfile = binfile;
 	}
 
 	@Override

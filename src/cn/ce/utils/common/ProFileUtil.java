@@ -1,13 +1,11 @@
 package cn.ce.utils.common;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.URL;
@@ -15,10 +13,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -248,10 +246,9 @@ public class ProFileUtil {
 	}
 
 	public synchronized static void modifyPropertieWithOutFileLock(
-			String localFilePath, String key, String value, boolean isDelete,
-			boolean isReWriteMapFormat) throws Exception {
-		if (StringUtils.isBlank(localFilePath) || StringUtils.isBlank(key)
-				|| StringUtils.isBlank(value)) {
+			String localFilePath, Map<String, String> keyvalue,
+			boolean isDelete, boolean isReWriteMapFormat) throws Exception {
+		if (StringUtils.isBlank(localFilePath) || keyvalue.isEmpty()) {
 			throw new Exception("修改本地资源文件方法输入的所有参数均不能为空！");
 		}
 		File propertiesFile = new File(localFilePath);
@@ -269,9 +266,13 @@ public class ProFileUtil {
 		try {
 			bos = new BufferedOutputStream(fou);
 			if (isDelete) {
-				p.remove(key);
+				for (Object key : keyvalue.keySet()) {
+					p.remove(key);
+				}
 			} else {
-				p.setProperty(key, value);
+				for (String key : keyvalue.keySet()) {
+					p.setProperty(key, keyvalue.get(key));
+				}
 			}
 			if (isReWriteMapFormat) {
 				p.store(bos, "edit success", " ");
@@ -287,10 +288,9 @@ public class ProFileUtil {
 	// 带文件锁增加，修改或者删除资源文件某个记录
 	// 注意：文件所有內容都會加載入內存！
 	public synchronized static void modifyOrCreatePropertiesWithFileLock(
-			String localFilePath, String key, String value, boolean isDelete,
-			boolean isReWriteMapFormat) throws Exception {
-		if (StringUtils.isBlank(localFilePath) || StringUtils.isBlank(key)
-				|| StringUtils.isBlank(value)) {
+			String localFilePath, Map<String, String> keyvalue,
+			boolean isDelete, boolean isReWriteMapFormat) throws Exception {
+		if (StringUtils.isBlank(localFilePath) || keyvalue.isEmpty()) {
 			throw new Exception("修改本地资源文件方法输入的所有参数均不能为空！");
 		}
 		File propertiesFile = new File(localFilePath);
@@ -352,9 +352,13 @@ public class ProFileUtil {
 			// logger.info("写之前的资源文件内容:" + p);
 			// logger.info("准备写入记录:" + key + "=" + value);
 			if (isDelete) {
-				p.remove(key);
+				for (Object key : keyvalue.keySet()) {
+					p.remove(key);
+				}
 			} else {
-				p.setProperty(key, value);
+				for (String key : keyvalue.keySet()) {
+					p.setProperty(key, keyvalue.get(key));
+				}
 			}
 
 			// 保存

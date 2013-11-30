@@ -128,7 +128,7 @@ public class BeanUtil {
 		}
 		String s = sb.toString();
 		s = s.substring(0, s.length() - 1);
-		logger.info("the csv is " + s);
+//		logger.info("the csv is " + s);
 		return s;
 	}
 
@@ -285,7 +285,7 @@ public class BeanUtil {
 			String token = ",";
 			List list = BeanUtil.csvToList(csv, token);
 			csv = BeanUtil.listToCSV(list, token);
-			System.out.println(csv);
+//			System.out.println(csv);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

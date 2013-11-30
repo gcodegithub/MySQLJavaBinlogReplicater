@@ -9,6 +9,7 @@ import org.apache.commons.logging.LogFactory;
 import cn.ce.binlog.mysql.pack.BinlogDumpComReqPacket;
 import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
 import cn.ce.binlog.mysql.pack.HeaderPacket;
+import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.mysql.util.ReadWriteUtil;
 import cn.ce.binlog.session.BinlogParseSession;
 
@@ -17,24 +18,30 @@ public class MySQLDumper {
 
 	public static void sendBinlogDump(MysqlConnector con,
 			BinlogParseSession session) throws IOException {
-		//logger.info("sendBinlogDump");
+		// logger.info("sendBinlogDump");
 		String binlogfilename = session.getLogPosition().getFileName();
 		Long binlogPosition = session.getLogPosition().getPosition();
 		long slaveId = session.getSlaveId();
 		BinlogDumpComReqPacket binlogDumpCmd = new BinlogDumpComReqPacket(
 				binlogfilename, binlogPosition, slaveId);
-		//logger.info("COM_BINLOG_DUMP: " + binlogDumpCmd);
+		// logger.info("COM_BINLOG_DUMP: " + binlogDumpCmd);
 		ReadWriteUtil.write(
 				con.getChannel(),
 				new ByteBuffer[] {
 						ByteBuffer.wrap(binlogDumpCmd.getBinlogDumpHeader()
 								.toBytes()),
 						ByteBuffer.wrap(binlogDumpCmd.toBytes()) });
+		MysqlConnector c = session.getC();
+		MysqlConnector nc = c.clone();
+		nc.reconnect();
+		session.setParseThread(Thread.currentThread());
+		TableMetaCache tableMetaCache = new TableMetaCache(nc);
+		session.setTableMetaCache(tableMetaCache);
 	}
 
 	public static BinlogDumpResPacket receiveBinlogDump(MysqlConnector con,
 			BinlogParseSession parseSession) throws Exception {
-		//logger.info("-------------Receive one BinlogDumpResPacket begin");
+		// logger.info("-------------Receive one BinlogDumpResPacket begin");
 		// 第一個包
 		byte[] h = ReadWriteUtil.readBytes(con.getChannel(), 4);
 		int packetBodyLength = (h[0] & 0xFF) | ((h[1] & 0xFF) << 8)
@@ -76,7 +83,7 @@ public class MySQLDumper {
 				body);
 		binlogDumpRes.genEvent(parseSession);
 		//
-		//logger.info("-------------Receive one BinlogDumpResPacket end");
+		// logger.info("-------------Receive one BinlogDumpResPacket end");
 		return binlogDumpRes;
 	}
 

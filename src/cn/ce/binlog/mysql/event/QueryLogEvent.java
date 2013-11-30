@@ -88,6 +88,7 @@ public class QueryLogEvent extends BinlogEvent {
 	public EventVO genEventVo() {
 		QueryLogEventVO vo = new QueryLogEventVO();
 		vo.setLogPos(header.getLogPos());
+		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
 		vo.setEventTypeString(this.getTypeName(this.getHeader().getType()));

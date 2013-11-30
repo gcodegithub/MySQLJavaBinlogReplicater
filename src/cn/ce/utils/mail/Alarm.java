@@ -37,7 +37,7 @@ public class Alarm {
 			String sendEmailAdd, String sendEmailPass, String recEmailAddCSV,
 			String csvToken, String subject, String emailContent) {
 		try {
-			logger.info("准备发送报警邮件");
+//			logger.info("准备发送报警邮件");
 			Email email = new SimpleEmail();
 			email.setCharset("UTF-8");
 			email.setSmtpPort(Integer.valueOf(smtpPort));
@@ -55,8 +55,8 @@ public class Alarm {
 			email.setMsg(emailContent);
 
 			email.send();
-			logger.info("发送报警邮件给:" + recEmailAddCSV);
-			logger.info("邮件内容为:" + emailContent);
+//			logger.info("发送报警邮件给:" + recEmailAddCSV);
+//			logger.info("邮件内容为:" + emailContent);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			logger.error("发送报警邮件失败，邮件内容:" + emailContent);
