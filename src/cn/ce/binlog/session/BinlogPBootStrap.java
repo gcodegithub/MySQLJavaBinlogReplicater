@@ -21,7 +21,7 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 	private String username;
 	private String password;
 
-	private static final BinlogParseSession bps = new BinlogParseSession();
+	private final BinlogParseSession bps = new BinlogParseSession();
 
 	public void afterPropertiesSet() {
 		BinParseResultVO resVo = new BinParseResultVO();
@@ -31,21 +31,20 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 					"bootstrap.mysql.master.slaveid");
 			this.initTarget();
 			this.contiParsebinlog(resVo, slaveId);
-			BinlogParserManager.save2file(c, slaveId, bps, resVo);
+			BinlogParserManager.consumer(c, slaveId, bps, resVo);
 		} catch (Throwable e) {
-			System.out.println("-----------xml binlog解析出现异常---------------");
+			System.out
+					.println("-----------BinlogPBootStrap出现异常---------------");
 			String err = e.getMessage();
 			e.printStackTrace();
 			c.disconnect();
-			BinlogParserManager.sessionMap.remove(slaveId);
-
 			err = "解析binlog线程停止，原因:" + err;
 			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err,
 					resVo.toString());
 		}
 	}
 
-	private void initTarget() throws Exception {
+	public void initTarget() throws Exception {
 		serverhost = ProFileUtil.findMsgString(Const.sysconfigFileClasspath,
 				"bootstrap.mysql.master.ip");
 		serverPort = ProFileUtil.findMsgString(Const.sysconfigFileClasspath,
@@ -56,7 +55,7 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 				"bootstrap.mysql.master.pass");
 	}
 
-	private void contiParsebinlog(BinParseResultVO resVo, String slaveId)
+	public void contiParsebinlog(BinParseResultVO resVo, String slaveId)
 			throws Throwable {
 		String posFileAbspath = ProFileUtil.findMsgString(
 				Const.sysconfigFileClasspath,
@@ -84,7 +83,22 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 
 	public void destroy() throws Exception {
 		System.out.println("-----------Spring容器销毁---------------");
-		// c.disconnect();
+		c.setPrepareStop(true);
+		while (!(bps.getConsumerThreadStop() && bps.getParseThreadStop())) {
+			Thread.sleep(500);
+			if (!bps.getConsumerThreadStop()) {
+				bps.getConsumerThread().interrupt();
+			}
+			if (!bps.getParseThreadStop()) {
+				bps.getParseThread().interrupt();
+			}
+		}
+		BinlogParserManager.sessionMap.remove(bps.getSlaveId().toString());
+		System.out.println("-----------Binlog XML工程完全退出--------------");
+	}
+
+	public BinlogParseSession getBps() {
+		return bps;
 	}
 
 }

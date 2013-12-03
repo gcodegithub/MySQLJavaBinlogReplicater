@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
@@ -31,6 +32,8 @@ public class BinlogParseSession {
 	private final int queueSize = 80;
 	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
 			queueSize);
+	private volatile AtomicBoolean parseThreadStop = new AtomicBoolean(false);
+	private volatile AtomicBoolean consumerThreadStop = new AtomicBoolean(false);
 
 	public final BinlogPosition getLogPosition() {
 		return logPosition;
@@ -58,20 +61,20 @@ public class BinlogParseSession {
 		// System.out.println("--------------------可用内存还剩余(M)：" + lastMem / 1024
 		// / 1024);
 		if (lastMem / 1024 / 1024 < 256) {
-			consumerThread.sleep(20);
+			Thread.sleep(20);
 			this.consumerThread.interrupt();
 		}
 		// System.out.println("-------isConsuInSleep:" + isConsuInSleep);
 		int size = this.getEventVOQueueSize();
-//		System.out.println("-------offer--队列中元素个数:" + size + " "
-//				+ System.currentTimeMillis());
+//		 System.out.println("-------offer--队列中元素个数:" + size + " "
+//		 + System.currentTimeMillis());
 		if (isConsuInSleep && size > 2) {
 			this.consumerThread.interrupt();
 		}
 		if (this.queueSize - size > 10) {
 			eventVOQueue.offer(binlogEvent);
 		} else {
-			consumerThread.sleep(20);
+			Thread.sleep(20);
 			eventVOQueue.offer(binlogEvent);
 		}
 
@@ -190,6 +193,22 @@ public class BinlogParseSession {
 
 	public void setConsuInSleep(boolean isConsuInSleep) {
 		this.isConsuInSleep = isConsuInSleep;
+	}
+
+	public boolean getParseThreadStop() {
+		return parseThreadStop.get();
+	}
+
+	public void setParseThreadStop(boolean parseThreadStop) {
+		this.parseThreadStop.set(parseThreadStop);
+	}
+
+	public boolean getConsumerThreadStop() {
+		return consumerThreadStop.get();
+	}
+
+	public void setConsumerThreadStop(boolean consumerThreadStop) {
+		this.consumerThreadStop.set(consumerThreadStop);
 	}
 
 	public static void main(String[] args) {

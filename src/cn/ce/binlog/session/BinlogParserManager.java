@@ -30,7 +30,7 @@ public class BinlogParserManager {
 
 	public static final ConcurrentHashMap<String, BinlogParseSession> sessionMap = new ConcurrentHashMap<String, BinlogParseSession>();
 
-	public static void save2file(MysqlConnector c, String slaveId,
+	public static void consumer(MysqlConnector c, String slaveId,
 			BinlogParseSession bps, BinParseResultVO resVo) throws Throwable {
 		BuzzWorker worker = new BuzzWorker(bps, resVo, consumerDao, "save2File");
 		BinlogParserManager.doBuzzToExePool(worker);
@@ -53,7 +53,7 @@ public class BinlogParserManager {
 			ProFileUtil.modifyOrCreatePropertiesWithFileLock(tokenFileAbspath,
 					kv, false, false);
 			res.setMsgDetail("first visit,generate new token.");
-			res.setResCode(TokenAuthRes.NEW_TOKEN);
+			res.setResCode(Const.NEW_TOKEN);
 			res.setNewToken(tokenInFile);
 		} else {
 			throw new Exception(
@@ -62,7 +62,7 @@ public class BinlogParserManager {
 		}
 		// 驗證通過
 		res.setMsgDetail("auth token generate");
-		res.setResCode(TokenAuthRes.OK);
+		res.setResCode(Const.OK);
 	}
 
 	public static void auth(Long slaveId, String tokenInput) throws Exception {
@@ -91,11 +91,15 @@ public class BinlogParserManager {
 			throw new Exception(
 					"Error：one slaveId,one request,已经有线程正在处理该slaveId请求,slaveId="
 							+ slaveId);
+		} else {
+			BinlogParserManager.sessionMap
+					.put(slaveId.toString(), parseSession);
 		}
+		parseSession.setSlaveId(slaveId);
+		parseSession.setC(c);
 		// logger.info("处理开始");
 		String filenameKey = slaveId + ".filenameKey";
 		String binlogPositionKey = slaveId + ".binlogPosition";
-		BinlogParserManager.sessionMap.put(slaveId.toString(), parseSession);
 		//
 		String posFileAbspath = ProFileUtil.findMsgString(
 				Const.sysconfigFileClasspath,
@@ -118,9 +122,9 @@ public class BinlogParserManager {
 		resVo.setBinlogfilenameNext(binlogfilename);
 		resVo.setBinlogPositionNext(new Long(binlogPosition));
 		c.connect();
-		parseSession.setC(c);
+
 		parseSession.setLogPosition(binlogfilename, new Long(binlogPosition));
-		parseSession.setSlaveId(slaveId);
+
 		//
 		BuzzWorker worker = new BuzzWorker(parseSession, resVo, dao,
 				"startDump");

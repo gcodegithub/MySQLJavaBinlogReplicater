@@ -333,7 +333,7 @@ public class ProFileUtil {
 				// logger.info("准备休息毫秒数=" + ranSleep);
 				// 等待时间在0.1秒～0.9秒间
 				try {
-					Thread.currentThread().sleep(ranSleep);
+					Thread.sleep(ranSleep);
 				} catch (InterruptedException e) {
 					Thread.interrupted();
 				}

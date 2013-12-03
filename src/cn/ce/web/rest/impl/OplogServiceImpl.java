@@ -1,6 +1,7 @@
 package cn.ce.web.rest.impl;
 
 import cn.ce.binlog.session.BinlogParserManager;
+import cn.ce.cons.Const;
 import cn.ce.web.rest.i.IFOplogService;
 import cn.ce.web.rest.vo.OpEventVO;
 import cn.ce.web.rest.vo.OpParseResultVO;
@@ -22,7 +23,7 @@ public class OplogServiceImpl implements IFOplogService {
 			res = new TokenAuthRes();
 			res.setMsgDetail("Error,msg:" + ex.getMessage() + ", slaveId:"
 					+ slaveId);
-			res.setResCode(TokenAuthRes.ERROR);
+			res.setResCode(Const.ERROR);
 			ex.printStackTrace();
 		}
 		return res;
@@ -66,7 +67,7 @@ public class OplogServiceImpl implements IFOplogService {
 			// sb.append(",tokenInput:");
 			// sb.append(tokenInput);
 			resVO.addErrorMsg(sb.toString());
-			resVO.setResCode(TokenAuthRes.ERROR);
+			resVO.setResCode(Const.ERROR);
 			ex.printStackTrace();
 		}
 		return resVO;

@@ -31,6 +31,7 @@ public class MysqlConnector implements Cloneable {
 	private String serverhost;
 	private int serverPort;
 	private MysqlConnector oldNc;
+	private volatile AtomicBoolean prepareStop = new AtomicBoolean(false);
 
 	public MysqlConnector(String serverhost, int serverPort, String username,
 			String password) {
@@ -207,6 +208,14 @@ public class MysqlConnector implements Cloneable {
 
 	public void setServerPort(int serverPort) {
 		this.serverPort = serverPort;
+	}
+
+	public boolean isPrepareStop() {
+		return prepareStop.get();
+	}
+
+	public void setPrepareStop(boolean prepareStop) {
+		this.prepareStop.set(prepareStop);
 	}
 
 	@Override

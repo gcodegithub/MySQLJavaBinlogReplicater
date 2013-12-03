@@ -55,7 +55,7 @@ public class FilePresistence {
 				+ pos_end + ".xml";
 		FileUtils.moveFile(new File(tmpFileNameFullPath), new File(
 				fileNameFullPath));
-		ProFileUtil.checkIsExist(fileNameFullPath, true);
+//		ProFileUtil.checkIsExist(fileNameFullPath, true);
 		// this.tooManyFilesWarn(absDirPath);
 	}
 

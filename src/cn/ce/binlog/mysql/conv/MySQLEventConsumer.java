@@ -40,39 +40,27 @@ public class MySQLEventConsumer {
 		try {
 			boolean isNeedWait = false;
 			String slaveId = bps.getSlaveId().toString();
-			while (c.isConnected()) {
+			while (c.isConnected() && !c.isPrepareStop()) {
 				bps.setConsuInSleep(false);
 				bps.setConsumerThread(Thread.currentThread());
 				int len = bps.getEventVOQueueSize();
 				// System.out.println("-------save2File--队列中元素个数:" + len);
 				try {
 					if (len > 0) {
-						// System.out.println("------------有增量数据，準備解析,Thread:"
-						// + Thread.currentThread());
 						this.event2vo(bps, resVo, isNeedWait);
-						// System.out.println("-------event2vo OVER");
 						fp.FilePersis(resVo, c.getServerhost(),
 								bps.getSlaveId());
-						// System.out.println("-------FilePersis OVER");
 						BinlogParserManager.saveCheckPoint(resVo, new Long(
 								slaveId));
-						// System.out.println("-------saveCheckPoint OVER");
 						resVo.setEventVOList(new ArrayList<EventVO>());
 					} else {
-						// System.out.println("------------没有增量数据供解析准备睡觉了,Thread:"
-						// + Thread.currentThread());
 						bps.setConsuInSleep(true);
 						Thread.sleep(10 * 1000);
-						// System.out
-						// .println("------------睡到自然醒，在看看有没有增量数据,Thread:"
-						// + Thread.currentThread());
 						bps.setConsuInSleep(false);
 					}
 				} catch (InterruptedException ex) {
 					bps.setConsuInSleep(false);
 					Thread.interrupted();
-					// System.out.println("------------增量数据突然来到，好梦被打醒,Thread:"
-					// + Thread.currentThread());
 				}
 			}// while end
 		} catch (Throwable e) {
@@ -82,10 +70,10 @@ public class MySQLEventConsumer {
 			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
 					+ bps.toString() + "\n" + resVo.toString());
 		} finally {
-			// System.out
-			// .println("---------MySQLEventConsumer持久化文件线程结束!!----------------");
-			c.disconnect();
-			bps.setConsumerThread(null);
+			c.setPrepareStop(true);
+			bps.setConsumerThreadStop(true);
+			System.out
+					.println("---------MySQLEventConsumer持久化文件线程结束!!----------------");
 		}
 	}
 

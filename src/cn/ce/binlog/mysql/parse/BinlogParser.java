@@ -1,12 +1,11 @@
 package cn.ce.binlog.mysql.parse;
 
+import java.nio.channels.ClosedByInterruptException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.binlog.mysql.pack.BinlogDumpResPacket;
-import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.session.BinlogParseSession;
-import cn.ce.binlog.session.BinlogParserManager;
 import cn.ce.cons.Const;
 import cn.ce.utils.mail.Alarm;
 import cn.ce.web.rest.vo.BinParseResultVO;
@@ -16,8 +15,7 @@ public class BinlogParser {
 
 	public static void startDump(final BinlogParseSession parseSession,
 			final BinParseResultVO resVo) throws Throwable {
-		// System.out.println("---------BinlogParser Thread----------------"
-		// + Thread.currentThread());
+		 System.out.println("-----BinlogParser Thread Begin-----------"+ Thread.currentThread());
 		// System.out
 		// .println("重要：数据库必须绑定IP若更改数据库IP后需要同步更改Slave端IP设置，需要清除之前該SlaveId的對應檢查點設置文件");
 		MysqlConnector c = parseSession.getC();
@@ -31,7 +29,7 @@ public class BinlogParser {
 		}
 		try {
 			MySQLDumper.sendBinlogDump(c, parseSession);
-			while (c.isConnected()) {
+			while (c.isConnected() && !c.isPrepareStop()) {
 				try {
 					MySQLDumper.receiveBinlogDump(c, parseSession);
 				} catch (SocketUnexpectedEndException ex) {
@@ -46,6 +44,9 @@ public class BinlogParser {
 					MySQLDumper.sendBinlogDump(c, parseSession);
 				}
 			}
+		} catch (ClosedByInterruptException e) {
+			System.out.println("---------BinlogParser解析线程被强行终止----------------");
+			e.printStackTrace();
 		} catch (Throwable e) {
 			String err = e.getMessage();
 			e.printStackTrace();
@@ -53,9 +54,10 @@ public class BinlogParser {
 			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
 					+ parseSession.toString() + "\n" + resVo.toString());
 		} finally {
-			// System.out.println("---------BinlogParser解析线程结束----------------");
 			c.disconnect();
-			parseSession.setParseThread(null);
+			c.setPrepareStop(true);
+			parseSession.setParseThreadStop(true);
+			System.out.println("---------BinlogParser解析线程结束----------------");
 		}
 	}
 
