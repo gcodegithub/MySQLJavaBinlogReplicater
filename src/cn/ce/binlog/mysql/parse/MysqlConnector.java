@@ -31,7 +31,7 @@ public class MysqlConnector implements Cloneable {
 	private String serverhost;
 	private int serverPort;
 	private MysqlConnector oldNc;
-	private volatile AtomicBoolean prepareStop = new AtomicBoolean(false);
+	private AtomicBoolean prepareStop = new AtomicBoolean(false);
 
 	public MysqlConnector(String serverhost, int serverPort, String username,
 			String password) {

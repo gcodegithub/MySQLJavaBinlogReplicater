@@ -10,6 +10,14 @@
 增量在conf/sysconfig.properties配置文件的bootstrap.mysql.vo.filepool.dir配置文件夹下生成文件
 
 
+
+
+
+
+http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/startBinlogXML.xml
+
+http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/stopBinlogXML.xml
+
 -------------------------CXF REST演示
 slaveId首次注册
 http://localhost:8080/MySQLJavaBinlogReplicater/webservice/binlog/getToken.json?slaveId=111

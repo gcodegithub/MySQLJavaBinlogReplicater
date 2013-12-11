@@ -26,7 +26,7 @@ public class BinlogParserManager {
 			.getLog(BinlogParserManager.class);
 	private final static BinlogParser dao = new BinlogParser();
 	private final static MySQLEventConsumer consumerDao = new MySQLEventConsumer();
-	private static ExecutorService executor = Executors.newFixedThreadPool(10);
+	private static ExecutorService executor = Executors.newFixedThreadPool(3);
 
 	public static final ConcurrentHashMap<String, BinlogParseSession> sessionMap = new ConcurrentHashMap<String, BinlogParseSession>();
 

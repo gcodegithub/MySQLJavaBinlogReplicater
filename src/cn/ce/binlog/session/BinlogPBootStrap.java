@@ -24,9 +24,11 @@ public class BinlogPBootStrap implements InitializingBean, DisposableBean {
 	private final BinlogParseSession bps = new BinlogParseSession();
 
 	public void afterPropertiesSet() {
+
 		BinParseResultVO resVo = new BinParseResultVO();
 		String slaveId = "";
 		try {
+			Thread.sleep(2000);
 			slaveId = ProFileUtil.findMsgString(Const.sysconfigFileClasspath,
 					"bootstrap.mysql.master.slaveid");
 			this.initTarget();

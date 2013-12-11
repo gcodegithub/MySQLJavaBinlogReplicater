@@ -66,16 +66,16 @@ public class BinlogParseSession {
 		}
 		// System.out.println("-------isConsuInSleep:" + isConsuInSleep);
 		int size = this.getEventVOQueueSize();
-//		 System.out.println("-------offer--队列中元素个数:" + size + " "
-//		 + System.currentTimeMillis());
+		// System.out.println("-------offer--队列中元素个数:" + size + " "
+		// + System.currentTimeMillis());
 		if (isConsuInSleep && size > 2) {
 			this.consumerThread.interrupt();
 		}
 		if (this.queueSize - size > 10) {
-			eventVOQueue.offer(binlogEvent);
+			eventVOQueue.put(binlogEvent);
 		} else {
 			Thread.sleep(20);
-			eventVOQueue.offer(binlogEvent);
+			eventVOQueue.put(binlogEvent);
 		}
 
 	}

@@ -9,3 +9,13 @@ COMMIT;
 ROLLBACK
 
 SHOW BINLOG EVENTS [IN 'log_name'] [FROM pos] [LIMIT [offset,] row_count]
+
+
+rename -v s/\.xml\.doing/\.xml/ *
+
+select 
+(select count(*) from TABLE_A) as TABLE_A_Count,
+(select count(*) from TABLE_B) as TABLE_B_Count,
+(select count(*) from TABLE_C) as TABLE_C_Count,
+(select count(*) from TABLE_D) as TABLE_D_Count,
+(select count(*) from TABLE_E) as TABLE_E_Count;
