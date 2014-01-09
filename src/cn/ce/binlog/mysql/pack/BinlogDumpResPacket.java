@@ -77,10 +77,10 @@ public class BinlogDumpResPacket {
 		int pos = 0;
 		while (pos < manyEventAll.length) {
 			int eventHeaderLen = session.getDescription().getCommonHeaderLen();
-//			logger.info("-----------------pos:" + pos);
-//			logger.info("-----------------manyEventAll.length:"
-//					+ manyEventAll.length);
-//			logger.info("-----------------eventHeaderLen:" + eventHeaderLen);
+			// logger.info("-----------------pos:" + pos);
+			// logger.info("-----------------manyEventAll.length:"
+			// + manyEventAll.length);
+			// logger.info("-----------------eventHeaderLen:" + eventHeaderLen);
 			// event 头内容
 			byte[] eventHeaderBytes = new byte[eventHeaderLen];
 
@@ -98,39 +98,54 @@ public class BinlogDumpResPacket {
 			}
 			byte[] oneEventAll = new byte[eventLen];
 			System.arraycopy(manyEventAll, pos, oneEventAll, 0, eventLen);
-//			if (eventHeaderLen != eventLen) {
-//				logger.info("有event head，有event body");
-//			} else {
-//				logger.info("没有event body，只有event head");
-//			}
+			// if (eventHeaderLen != eventLen) {
+			// logger.info("有event head，有event body");
+			// } else {
+			// logger.info("没有event body，只有event head");
+			// }
 			pos = pos + eventLen;
 			BinlogEvent binlogEvent = BinlogEvent.buildEvent(eventHeader,
 					oneEventAll, session);
 			session.addEventVOQueue(binlogEvent);
-//			if (eventHeaderLen != eventLen) {
-//				logger.info("event body is not null");
-//				break;
-//			} else {
-//				logger.info("event body is null");
-//			}
+			// if (eventHeaderLen != eventLen) {
+			// logger.info("event body is not null");
+			// break;
+			// } else {
+			// logger.info("event body is null");
+			// }
 
 		}
 	}
 
+	/*
+	 * 
+	 * header (1) -- ERR Packet indicator
+	 * 
+	 * error_code (2) -- error-code
+	 * 
+	 * sql_state_marker (string.fix_len) -- [len = 1], #
+	 * 
+	 * sql_state (string.fix_len) -- [len = 5], SQL State of this error
+	 * 
+	 * error_message (string.EOF) -- human readable error message
+	 */
+
 	private void error(byte[] data) throws Exception {
 		final int mark = ((byte) data[0]) & 0xFF;
-		if (mark == 255) // error from master
-		{
-			int pos = BinlogEvent.NET_HEADER_SIZE + 1;
+		if (mark == 255) {
+			// error from master
+			int pos = BinlogEvent.NET_HEADER_SIZE - 1;
+			// error_code (2) -- error-code
 			final int errno = ReadWriteUtil.readUnsignedShortLittleEndian(data,
 					pos);
-			// pos = pos + 2;
-			String sqlstate = ReadWriteUtil.getFixString(data, pos - 1,
+			// sql_state_marker (string.fix_len) -- [len = 1], #
+			// sql_state (string.fix_len) -- [len = 5], SQL State of this error
+			String sqlstate = ReadWriteUtil.getFixString(data, pos + 1,
 					BinlogEvent.SQLSTATE_LENGTH, "UTF-8");
-			// String sqlstate = forward(1).getFixString();
-			pos = pos + BinlogEvent.SQLSTATE_LENGTH;
-			String errmsg = ReadWriteUtil.getFixString(data, pos - 3,
-					data.length - pos, "UTF-8");
+			pos = pos + BinlogEvent.SQLSTATE_LENGTH + 1;
+			// error_message (string.EOF) -- human readable error message
+			String errmsg = ReadWriteUtil.getFixString(data, pos, data.length
+					- pos, "UTF-8");
 			throw new IOException("Received error packet:" + " errno = "
 					+ errno + ", sqlstate = " + sqlstate + " errmsg = "
 					+ errmsg);

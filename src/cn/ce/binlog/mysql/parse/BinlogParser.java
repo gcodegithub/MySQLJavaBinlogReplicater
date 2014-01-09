@@ -36,11 +36,12 @@ public class BinlogParser {
 					String err = ex.getMessage();
 					ex.printStackTrace();
 					c.reconnect();
-					Alarm.sendAlarmEmail(
-							Const.sysconfigFileClasspath,
-							"警告:MySQL Master网络接口超时断掉",
-							err + "\n" + parseSession.toString() + "\n"
-									+ resVo.toString());
+					System.out.println("警告:MySQL Master网络接口超时断掉,程序会自动重新连接，err："+err);
+//					Alarm.sendAlarmEmail(
+//							Const.sysconfigFileClasspath,
+//							"警告:MySQL Master网络接口超时断掉",
+//							err + "\n" + parseSession.toString() + "\n"
+//									+ resVo.toString());
 					MySQLDumper.sendBinlogDump(c, parseSession);
 				}
 			}
