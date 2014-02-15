@@ -1,5 +1,10 @@
 package cn.ce.binlog.mysql.event;
 
+import java.sql.Types;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
@@ -17,6 +22,55 @@ public class ColumnInfoValue {
 	private String columnType;
 	private String value;
 	private boolean isAfter;
+
+	public Object getReadValue() {
+		Object obj = null;
+		if (value == null) {
+			return value;
+		}
+		try {
+			switch (javaType) {
+			case Types.DATE:
+				// SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+				// Date date = sdf.parse(value);
+				java.sql.Date date = java.sql.Date.valueOf(value);
+				obj = date;
+				break;
+			case Types.TIMESTAMP:
+				java.sql.Timestamp datetime = java.sql.Timestamp.valueOf(value);
+				obj = datetime;
+				break;
+			case Types.INTEGER:
+				obj = new Integer(value);
+				break;
+			case Types.BIGINT:
+				obj = new Long(value);
+				break;
+			case Types.DOUBLE:
+				obj = new Double(value);
+				break;
+			case Types.FLOAT:
+				obj = new Float(value);
+				break;
+			case Types.DECIMAL:
+				obj = new Double(value);
+				break;
+			case Types.BOOLEAN:
+				obj = new Boolean(value);
+				break;
+			default:
+				obj = value;
+				break;
+			}
+		} catch (Throwable ex) {
+			System.err.println("ex--------:" + ex.getMessage());
+			System.err.println("javaType:" + javaType);
+			System.err.println("value:" + value);
+			obj = value;
+			ex.printStackTrace();
+		}
+		return obj;
+	}
 
 	public String getColumnName() {
 		return columnName;
@@ -95,5 +149,17 @@ public class ColumnInfoValue {
 		String s = ToStringBuilder.reflectionToString(this,
 				ToStringStyle.MULTI_LINE_STYLE);
 		return s;
+	}
+
+	public static void main(String[] args) {
+		try {
+			String value = "2014-02-09";
+
+			// Date date = java.sql.Date.valueOf(value);
+
+			System.out.println(java.sql.Timestamp.valueOf(value));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

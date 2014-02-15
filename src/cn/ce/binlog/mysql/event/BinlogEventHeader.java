@@ -32,7 +32,7 @@ public class BinlogEventHeader implements Serializable {
 	 * query which has its real offset.
 	 */
 	private String binlogfilename;
-	private long logPos;
+	private Long logPos = null;
 
 	/**
 	 * Timestamp on the master(for debugging and replication of
@@ -91,8 +91,11 @@ public class BinlogEventHeader implements Serializable {
 		this.eventLen = (int) ReadWriteUtil.readUnsignedIntLittleEndian(
 				eventHeaderBytes, pos);
 		pos = pos + 4;
-		this.logPos = ReadWriteUtil.readUnsignedIntLittleEndian(
+		long logPos = ReadWriteUtil.readUnsignedIntLittleEndian(
 				eventHeaderBytes, pos);
+		if (logPos != 0) {
+			this.logPos = logPos;
+		}
 		pos = pos + 4;
 		this.flags = ReadWriteUtil.readUnsignedShortLittleEndian(
 				eventHeaderBytes, pos);
@@ -118,7 +121,7 @@ public class BinlogEventHeader implements Serializable {
 		this.type = type;
 	}
 
-	public long getLogPos() {
+	public Long getLogPos() {
 		return logPos;
 	}
 

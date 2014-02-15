@@ -1,10 +1,10 @@
 package cn.ce.utils.common;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +31,7 @@ import org.apache.commons.validator.EmailValidator;
 
 public class BeanUtil {
 
-	private final static Log logger = LogFactory.getLog(BeanUtil.class);
+	private final static Log	logger	= LogFactory.getLog(BeanUtil.class);
 
 	public static Long getLastAvailMem() {
 		Long free = Runtime.getRuntime().freeMemory();
@@ -42,28 +43,23 @@ public class BeanUtil {
 		return max - total + free;
 	}
 
-	public static void seriObject2File(String fileFullPath, Serializable obj)
-			throws Exception {
+	public static void seriObject2File(String fileFullPath, Serializable obj) throws Exception {
 		File outFile = new File(fileFullPath);
-		ObjectOutputStream output = new ObjectOutputStream(
-				new FileOutputStream(outFile));
+		ObjectOutputStream output = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(outFile)));
 		output.writeObject(obj);
 		IOUtils.closeQuietly(output);
 		ProFileUtil.checkIsExist(fileFullPath, true);
 	}
 
-	public static Serializable getSeriObjFromFile(String fileFullPath)
-			throws Exception {
+	public static <T> T getSeriObjFromFile(String fileFullPath) throws Exception {
 		ProFileUtil.checkIsExist(fileFullPath, true);
-		ObjectInputStream input = new ObjectInputStream(new FileInputStream(
-				new File(fileFullPath)));
-		Serializable t = (Serializable) input.readObject();
+		ObjectInputStream input = new ObjectInputStream(new BufferedInputStream(new FileInputStream(new File(fileFullPath))));
+		T t = (T) input.readObject();
 		IOUtils.closeQuietly(input);
 		return t;
 	}
 
-	public static String getFirstOneFromCSV(String csv, String token)
-			throws RuntimeException {
+	public static String getFirstOneFromCSV(String csv, String token) throws RuntimeException {
 		List<String> list = BeanUtil.csvToList(csv, token);
 		if (list.get(0) == null) {
 			throw new RuntimeException("Error:输入的参数csv首个元素为空!");
@@ -73,8 +69,7 @@ public class BeanUtil {
 	}
 
 	// 将无序的Collection排序成有序的List返回，根据getMethodName的返回值的大小ASC排序
-	public static <T> List<T> getASCOrderByGetMethod(Collection<T> collection,
-			final String getMethodName) {
+	public static <T> List<T> getASCOrderByGetMethod(Collection<T> collection, final String getMethodName) {
 		if (collection == null || collection.size() == 0) {
 			return null;
 		}
@@ -86,10 +81,8 @@ public class BeanUtil {
 				String res1 = null;
 				String res2 = null;
 				try {
-					Method getMethodNameM1 = t1OwnerClass.getDeclaredMethod(
-							getMethodName, new Class[] {});
-					Method getMethodNameM2 = t2OwnerClass.getDeclaredMethod(
-							getMethodName, new Class[] {});
+					Method getMethodNameM1 = t1OwnerClass.getDeclaredMethod(getMethodName, new Class[] {});
+					Method getMethodNameM2 = t2OwnerClass.getDeclaredMethod(getMethodName, new Class[] {});
 					res1 = getMethodNameM1.invoke(t1).toString();
 					res2 = getMethodNameM2.invoke(t2).toString();
 				} catch (Exception e) {
@@ -108,9 +101,7 @@ public class BeanUtil {
 	}
 
 	// 根据集合中对象的get方法返回值，按顺序返回get方法返回值的csv字符串
-	public static <T> String getGetMethodValueCSVByList(List<T> objectList,
-			final String getMethodName, final String separator)
-			throws Exception {
+	public static <T> String getGetMethodValueCSVByList(List<T> objectList, final String getMethodName, final String separator) throws Exception {
 		if (objectList == null || objectList.size() == 0) {
 			return null;
 		}
@@ -120,20 +111,18 @@ public class BeanUtil {
 		StringBuilder sb = new StringBuilder();
 		for (T t : objectList) {
 			Class tOwnerClass = t.getClass();
-			Method getMethodNameM = tOwnerClass.getDeclaredMethod(
-					getMethodName, new Class[] {});
+			Method getMethodNameM = tOwnerClass.getDeclaredMethod(getMethodName, new Class[] {});
 			String res = getMethodNameM.invoke(t).toString();
 			sb.append(res);
 			sb.append(separator);
 		}
 		String s = sb.toString();
 		s = s.substring(0, s.length() - 1);
-//		logger.info("the csv is " + s);
+		// logger.info("the csv is " + s);
 		return s;
 	}
 
-	public static boolean isInCSV(String target, String csv, String token)
-			throws Exception {
+	public static boolean isInCSV(String target, String csv, String token) throws Exception {
 		if (target == null || target.trim().length() == 0) {
 			throw new Exception("Error:isInCSV方法参数中输入的目标字符串为空!");
 		}
@@ -150,8 +139,7 @@ public class BeanUtil {
 	}
 
 	// csv格式转换成List,
-	public static List<String> csvToList(String csv, String token)
-			throws RuntimeException {
+	public static List<String> csvToList(String csv, String token) throws RuntimeException {
 		if (csv == null || csv.trim().length() == 0) {
 			throw new RuntimeException("Error:输入的参数csv为空!");
 		}
@@ -183,10 +171,8 @@ public class BeanUtil {
 	}
 
 	// bean 的proNames属性不为null
-	public static <T> void proNotNull(T bean, String[] proNames)
-			throws Exception {
-		if (proNames == null || proNames.length == 0
-				|| proNames[0].trim().length() == 0) {
+	public static <T> void proNotNull(T bean, String[] proNames) throws Exception {
+		if (proNames == null || proNames.length == 0 || proNames[0].trim().length() == 0) {
 			throw new Exception("Error:输入的参数proNamesw为空!");
 		}
 		List<String> proList = Arrays.asList(proNames);
@@ -204,10 +190,8 @@ public class BeanUtil {
 	}
 
 	// bean 的proNamesEmail属性是否合法
-	public static <T> void proEmailValid(T bean, String[] proNames)
-			throws Exception {
-		if (proNames == null || proNames.length == 0
-				|| proNames[0].trim().length() == 0) {
+	public static <T> void proEmailValid(T bean, String[] proNames) throws Exception {
+		if (proNames == null || proNames.length == 0 || proNames[0].trim().length() == 0) {
 			throw new Exception("Error:输入的参数proNamesw为空!");
 		}
 		List<String> proList = Arrays.asList(proNames);
@@ -219,8 +203,7 @@ public class BeanUtil {
 			// Validate an email address
 			boolean isAddressValid = validator.isValid(value);
 			if (!isAddressValid) {
-				throw new Exception("Error:CusRegisterVO " + value
-						+ "是一个非法的Email地址!");
+				throw new Exception("Error:CusRegisterVO " + value + "是一个非法的Email地址!");
 			}
 		}
 	}//
@@ -228,10 +211,8 @@ public class BeanUtil {
 	// private static final java.lang.String DOMAIN_PATTERN =
 	// "/^[^\s\(\)<>@,;:'\\\"\.\[\]]+(\.[^\s\(\)<>@,;:'\\\"\.\[\]]+)*\s*$/";
 	// bean 的域名属性是否合法 比如 abc.com
-	public static <T> void proDomainValid(T bean, String[] proNames)
-			throws Exception {
-		if (proNames == null || proNames.length == 0
-				|| proNames[0].trim().length() == 0) {
+	public static <T> void proDomainValid(T bean, String[] proNames) throws Exception {
+		if (proNames == null || proNames.length == 0 || proNames[0].trim().length() == 0) {
 			throw new Exception("Error:输入的参数proNames为空!");
 		}
 		List<String> proList = Arrays.asList(proNames);
@@ -243,8 +224,7 @@ public class BeanUtil {
 			Matcher matcher = regex.matcher(value);
 			boolean isValid = matcher.matches();
 			if (!isValid) {
-				throw new Exception("Error:CusRegisterVO " + value
-						+ "是一个非法的域名属性!");
+				throw new Exception("Error:CusRegisterVO " + value + "是一个非法的域名属性!");
 			}
 		}
 	}//
@@ -269,6 +249,12 @@ public class BeanUtil {
 		return res;
 	}
 
+	public static int getRandomInt(int formIncude, int endInclude) {
+		Random rd = new Random(System.currentTimeMillis() % 5 + System.currentTimeMillis());
+		int ret = formIncude + rd.nextInt(endInclude - formIncude + 1);
+		return ret;
+	}
+
 	public static void main(String[] args) {
 
 		try {
@@ -285,7 +271,7 @@ public class BeanUtil {
 			String token = ",";
 			List list = BeanUtil.csvToList(csv, token);
 			csv = BeanUtil.listToCSV(list, token);
-//			System.out.println(csv);
+			// System.out.println(csv);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

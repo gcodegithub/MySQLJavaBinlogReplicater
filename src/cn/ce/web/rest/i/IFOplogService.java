@@ -4,8 +4,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 
-import cn.ce.web.rest.vo.OpParseResultVO;
-import cn.ce.web.rest.vo.TokenAuthRes;
+import cn.ce.binlog.vo.OpParseResultVO;
+import cn.ce.binlog.vo.TokenAuthRes;
 
 @Path(value = "/")
 public interface IFOplogService {

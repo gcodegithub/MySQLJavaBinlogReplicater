@@ -1,13 +1,17 @@
 package cn.ce.utils.common;
 
-import java.io.RandomAccessFile;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ResourceBundle;
 
-public class BufferedRandomAccessFile extends RandomAccessFile {
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+public class BufferedRandomAccessFile extends RandomAccessFile {
+	private final static Log logger = LogFactory
+			.getLog(BufferedRandomAccessFile.class);
 	static ResourceBundle res = ResourceBundle.getBundle("kbps.io.Res");
 	private static final int DEFAULT_BUFFER_BIT_LEN = 10;
 	private static final int DEFAULT_BUFFER_SIZE = 1 << DEFAULT_BUFFER_BIT_LEN;
@@ -297,11 +301,6 @@ public class BufferedRandomAccessFile extends RandomAccessFile {
 		brafWriteFile.close();
 		brafReadFile.close();
 
-		System.out.println("BufferedRandomAccessFile Copy & Write File: "
-				+ brafReadFile.filename + "    FileSize: "
-				+ java.lang.Integer.toString((int) readfilelen >> 1024)
-				+ " (KB)    " + "Spend: "
-				+ (double) (System.currentTimeMillis() - start) / 1000 + "(s)");
 
 		java.io.FileInputStream fdin = new java.io.FileInputStream(
 				"C:\\WINNT\\Fonts\\STKAITI.TTF");
@@ -324,7 +323,7 @@ public class BufferedRandomAccessFile extends RandomAccessFile {
 		dos.close();
 		dis.close();
 
-		System.out.println("DataBufferedios Copy & Write File: "
+		logger.info("DataBufferedios Copy & Write File: "
 				+ brafReadFile.filename + "    FileSize: "
 				+ java.lang.Integer.toString((int) readfilelen >> 1024)
 				+ " (KB)    " + "Spend: "

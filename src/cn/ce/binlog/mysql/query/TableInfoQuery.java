@@ -4,11 +4,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import com.mysql.jdbc.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.mysql.jdbc.ResultSetMetaData;
+
 public class TableInfoQuery {
+	private final static Log logger = LogFactory.getLog(TableInfoQuery.class);
 
 	public static void query(String user, String password, String ip, int port,
 			String dbname, String tableName) throws Exception {
@@ -28,12 +33,12 @@ public class TableInfoQuery {
 			String sql = "select * from age";
 			rs = stmt.executeQuery(sql);
 			while (rs.next()) {
-				System.out.println(rs.getString("id")); // 取得数据库中的数据
-				System.out.println(rs.getString("desc"));
+				logger.info(rs.getString("id")); // 取得数据库中的数据
+				logger.info(rs.getString("desc"));
 			}
 		} catch (ClassNotFoundException e) {
 			// 加载JDBC错误,所要用的驱动没有找到
-			System.out.println("驱动加载错误");
+			logger.info("驱动加载错误");
 		} catch (SQLException ex) {
 			// 显示数据库连接错误或查询错误
 			System.err.println("SQLException:" + ex.getMessage());
@@ -72,13 +77,12 @@ public class TableInfoQuery {
 			ResultSetMetaData rsd = (ResultSetMetaData) pst.executeQuery()
 					.getMetaData();
 			for (int i = 0; i < rsd.getColumnCount(); i++) {
-				System.out.println("num=" + i);
+				logger.info("num=" + i);
 
-				System.out.print("java类型：" + rsd.getColumnClassName(i + 1));
-				System.out.print("  数据库类型:" + rsd.getColumnTypeName(i + 1));
-				System.out.print("  字段名称:" + rsd.getColumnName(i + 1));
-				System.out.print("  字段长度:" + rsd.getColumnDisplaySize(i + 1));
-				System.out.println();
+				logger.info("java类型：" + rsd.getColumnClassName(i + 1));
+				logger.info("  数据库类型:" + rsd.getColumnTypeName(i + 1));
+				logger.info("  字段名称:" + rsd.getColumnName(i + 1));
+				logger.info("  字段长度:" + rsd.getColumnDisplaySize(i + 1));
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -95,7 +99,7 @@ public class TableInfoQuery {
 	public static void main(String[] args) {
 		try {
 			TableInfoQuery.queryColumMeta("root", "qwertyuiop", "localhost",
-					3306, "test", "log4j");
+					3306, "test", "DDD");
 			// TableInfoQuery.query("root", "qwertyuiop", "localhost", 3306,
 			// "test", "log4j");
 		} catch (Exception e) {

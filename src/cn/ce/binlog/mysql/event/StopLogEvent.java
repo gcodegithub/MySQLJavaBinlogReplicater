@@ -1,8 +1,8 @@
 package cn.ce.binlog.mysql.event;
 
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.StopLogEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.StopLogEventVO;
 
 public final class StopLogEvent extends BinlogEvent {
 	public StopLogEvent(BinlogEventHeader header, LogBuffer buffer,

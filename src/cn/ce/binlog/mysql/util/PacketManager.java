@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import cn.ce.binlog.mysql.pack.HeaderPacket;
+import cn.ce.binlog.mysql.parse.SocketUnexpectedEndException;
 
 
 public abstract class PacketManager {
@@ -22,7 +23,7 @@ public abstract class PacketManager {
 		while (buffer.hasRemaining()) {
 			int readNum = ch.read(buffer);
 			if (readNum == -1) {
-				throw new IOException("Unexpected End Stream");
+				throw new SocketUnexpectedEndException("Unexpected End Stream");
 			}
 		}
 		return buffer;

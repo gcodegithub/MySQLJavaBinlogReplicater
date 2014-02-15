@@ -8,10 +8,9 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.binlog.session.BinlogParseSession;
-import cn.ce.binlog.session.BinlogPosition;
+import cn.ce.binlog.manager.Context;
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
+import cn.ce.binlog.vo.EventVO;
 
 public class BinlogEvent implements Serializable {
 	/**
@@ -30,7 +29,6 @@ public class BinlogEvent implements Serializable {
 		vo.setBinfile(header.getBinlogfilename());
 		vo.setMysqlServerId(header.getServerId());
 		vo.setWhen(header.getWhen());
-		System.out.println(vo);
 		return vo;
 	}
 
@@ -43,10 +41,9 @@ public class BinlogEvent implements Serializable {
 	}
 
 	public static BinlogEvent buildEvent(BinlogEventHeader header,
-			byte[] eventAll, BinlogParseSession context) throws Exception {
+			byte[] eventAll, Context context) throws Exception {
 		LogBuffer buffer = new LogBuffer(eventAll, 0, eventAll.length);
-		BinlogPosition logPosition = context.getLogPosition();
-		FormatDescriptionLogEvent descriptionEvent = context.getDescription();
+		FormatDescriptionLogEvent descriptionEvent = FormatDescriptionLogEvent.FORMAT_DESCRIPTION_EVENT_USED;
 		if (!handleSet.get(header.getType())) {
 			// unsupported binary-log
 		}
@@ -66,10 +63,10 @@ public class BinlogEvent implements Serializable {
 			// logger.info("QUERY_EVENT");
 			QueryLogEvent event = new QueryLogEvent(header, buffer,
 					descriptionEvent);
-			event.parseQueryEvent();
+			event.parseQueryEvent(context);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			// logger.info("QueryLogEvent:" + event);
 			return event;
 		}
@@ -78,8 +75,8 @@ public class BinlogEvent implements Serializable {
 			XidLogEvent event = new XidLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			// logger.info("XidLogEvent:" + event);
 			return event;
 		}
@@ -88,9 +85,11 @@ public class BinlogEvent implements Serializable {
 			TableMapLogEvent mapEvent = new TableMapLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			context.putTable(mapEvent);
+//			context.setParseTableMapLogEventVO((TableMapLogEventVO) mapEvent
+//					.genEventVo());
 			return mapEvent;
 		}
 		case BinlogEvent.WRITE_ROWS_EVENT_V1: {
@@ -98,8 +97,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new WriteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			event.genColumInfo(context);
 			return event;
@@ -109,8 +108,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new UpdateRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			event.genColumInfo(context);
 			return event;
@@ -120,8 +119,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new DeleteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			event.genColumInfo(context);
 			return event;
@@ -131,10 +130,10 @@ public class BinlogEvent implements Serializable {
 			RotateLogEvent event = new RotateLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition = new BinlogPosition(event.getFilename(),
-					event.getPosition());
-			context.setLogPosition(logPosition);
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(event.getPosition());
+			context.setBinlogfilename(event.getFilename());
+			header.setBinlogfilename(event.getFilename());
+			header.setLogPos(event.getPosition());
 			// logger.info("RotateLogEvent:" + event);
 			return event;
 		}
@@ -144,15 +143,14 @@ public class BinlogEvent implements Serializable {
 			LoadLogEvent event = new LoadLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.SLAVE_EVENT: /* can never happen (unused event) */
 		{
 			if (logger.isWarnEnabled())
-				logger.warn("Skipping unsupported SLAVE_EVENT from: "
-						+ context.getLogPosition());
+				logger.warn("Skipping unsupported SLAVE_EVENT from: " + context);
 			break;
 		}
 		case BinlogEvent.CREATE_FILE_EVENT: {
@@ -160,8 +158,8 @@ public class BinlogEvent implements Serializable {
 			CreateFileLogEvent event = new CreateFileLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.APPEND_BLOCK_EVENT: {
@@ -169,8 +167,8 @@ public class BinlogEvent implements Serializable {
 			AppendBlockLogEvent event = new AppendBlockLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.DELETE_FILE_EVENT: {
@@ -178,8 +176,8 @@ public class BinlogEvent implements Serializable {
 			DeleteFileLogEvent event = new DeleteFileLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.EXEC_LOAD_EVENT: {
@@ -187,8 +185,8 @@ public class BinlogEvent implements Serializable {
 			ExecuteLoadLogEvent event = new ExecuteLoadLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.START_EVENT_V3: {
@@ -197,8 +195,8 @@ public class BinlogEvent implements Serializable {
 			StartLogEventV3 event = new StartLogEventV3(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.STOP_EVENT: {
@@ -206,8 +204,8 @@ public class BinlogEvent implements Serializable {
 			StopLogEvent event = new StopLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.INTVAR_EVENT: {
@@ -215,8 +213,8 @@ public class BinlogEvent implements Serializable {
 			IntvarLogEvent event = new IntvarLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.RAND_EVENT: {
@@ -224,8 +222,8 @@ public class BinlogEvent implements Serializable {
 			RandLogEvent event = new RandLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.USER_VAR_EVENT: {
@@ -233,34 +231,37 @@ public class BinlogEvent implements Serializable {
 			UserVarLogEvent event = new UserVarLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.FORMAT_DESCRIPTION_EVENT: {
 			// logger.info("FORMAT_DESCRIPTION_EVENT");
 			descriptionEvent = new FormatDescriptionLogEvent(header, buffer,
 					descriptionEvent);
-			context.setDescription(descriptionEvent);
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			FormatDescriptionLogEvent.FORMAT_DESCRIPTION_EVENT_USED = descriptionEvent;
+			header.setBinlogfilename(context.getBinlogfilename());
+			if(header.getLogPos()==null){
+				header.setLogPos(context.getBinlogPosition());
+			}
 			return descriptionEvent;
 		}
 		case BinlogEvent.PRE_GA_WRITE_ROWS_EVENT: {
 			if (logger.isWarnEnabled())
 				logger.warn("Skipping unsupported PRE_GA_WRITE_ROWS_EVENT from: "
-						+ context.getLogPosition());
+						+ context);
 			break;
 		}
 		case BinlogEvent.PRE_GA_UPDATE_ROWS_EVENT: {
 			if (logger.isWarnEnabled())
 				logger.warn("Skipping unsupported PRE_GA_UPDATE_ROWS_EVENT from: "
-						+ context.getLogPosition());
+						+ context);
 			break;
 		}
 		case BinlogEvent.PRE_GA_DELETE_ROWS_EVENT: {
 			if (logger.isWarnEnabled())
 				logger.warn("Skipping unsupported PRE_GA_DELETE_ROWS_EVENT from: "
-						+ context.getLogPosition());
+						+ context);
 			break;
 		}
 		case BinlogEvent.BEGIN_LOAD_QUERY_EVENT: {
@@ -268,8 +269,8 @@ public class BinlogEvent implements Serializable {
 			BeginLoadQueryLogEvent event = new BeginLoadQueryLogEvent(header,
 					buffer, descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.EXECUTE_LOAD_QUERY_EVENT: {
@@ -277,8 +278,8 @@ public class BinlogEvent implements Serializable {
 			ExecuteLoadQueryLogEvent event = new ExecuteLoadQueryLogEvent(
 					header, buffer, descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.INCIDENT_EVENT: {
@@ -286,8 +287,8 @@ public class BinlogEvent implements Serializable {
 			IncidentLogEvent event = new IncidentLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.HEARTBEAT_LOG_EVENT: {
@@ -295,8 +296,8 @@ public class BinlogEvent implements Serializable {
 			HeartbeatLogEvent event = new HeartbeatLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.IGNORABLE_LOG_EVENT: {
@@ -304,8 +305,8 @@ public class BinlogEvent implements Serializable {
 			IgnorableLogEvent event = new IgnorableLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.ROWS_QUERY_LOG_EVENT: {
@@ -313,8 +314,8 @@ public class BinlogEvent implements Serializable {
 			RowsQueryLogEvent event = new RowsQueryLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.WRITE_ROWS_EVENT: {
@@ -322,8 +323,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new WriteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			return event;
 		}
@@ -332,8 +333,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new UpdateRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			return event;
 		}
@@ -342,8 +343,8 @@ public class BinlogEvent implements Serializable {
 			RowsLogEvent event = new DeleteRowsLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			event.fillTable(context);
 			return event;
 		}
@@ -353,8 +354,8 @@ public class BinlogEvent implements Serializable {
 			GtidLogEvent event = new GtidLogEvent(header, buffer,
 					descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		case BinlogEvent.PREVIOUS_GTIDS_LOG_EVENT: {
@@ -362,8 +363,8 @@ public class BinlogEvent implements Serializable {
 			PreviousGtidsLogEvent event = new PreviousGtidsLogEvent(header,
 					buffer, descriptionEvent);
 			/* updating position in context */
-			logPosition.setPosition(header.getLogPos());
-			header.setBinlogfilename(context.getLogPosition().getFileName());
+			context.setBinlogPosition(header.getLogPos());
+			header.setBinlogfilename(context.getBinlogfilename());
 			return event;
 		}
 		default:
@@ -377,19 +378,19 @@ public class BinlogEvent implements Serializable {
 				IgnorableLogEvent event = new IgnorableLogEvent(header, buffer,
 						descriptionEvent);
 				/* updating position in context */
-				logPosition.setPosition(header.getLogPos());
-				header.setBinlogfilename(context.getLogPosition().getFileName());
+				context.setBinlogPosition(header.getLogPos());
+				header.setBinlogfilename(context.getBinlogfilename());
 				return event;
 			} else {
 				if (logger.isWarnEnabled())
 					logger.warn("Skipping unrecognized binlog event "
-							+ " from: " + context.getLogPosition());
+							+ " from: " + context);
 			}
 		}
 
 		/* updating position in context */
-		logPosition.setPosition(header.getLogPos());
-		header.setBinlogfilename(context.getLogPosition().getFileName());
+		context.setBinlogPosition(header.getLogPos());
+		header.setBinlogfilename(context.getBinlogfilename());
 		/* Unknown or unsupported log event */
 		return new UnknownLogEvent(header);
 	}

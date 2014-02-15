@@ -1,5 +1,6 @@
 package cn.ce.binlog.mysql.event;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -10,18 +11,16 @@ import java.util.BitSet;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 
+import cn.ce.binlog.manager.Context;
 import cn.ce.binlog.mysql.event.TableMapLogEvent.ColumnInfo;
 import cn.ce.binlog.mysql.query.TableMeta;
-import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.mysql.query.TableMeta.FieldMeta;
+import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.mysql.util.MySQLColumnUtil;
-import cn.ce.binlog.session.BinlogParseSession;
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.RowEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.RowEventVO;
 
 public abstract class RowsLogEvent extends BinlogEvent {
 
@@ -161,7 +160,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 		rowDMLType = genDMLType();
 	}
 
-	public final void fillTable(BinlogParseSession context) throws Exception {
+	public final void fillTable(Context context) throws Exception {
 		table = context.getTable(tableId);
 
 		// end of statement check:
@@ -216,57 +215,50 @@ public abstract class RowsLogEvent extends BinlogEvent {
 		return rowDMLType;
 	}
 
-	public void genColumInfo(BinlogParseSession context) throws Exception {
+	public void genColumInfo(Context context) throws Exception {
 		TableMetaCache tableMetaCache = context.getTableMetaCache();
-		try {
-			TableMapLogEvent table = this.getTable();
-			if (table == null) {
-				// tableId对应的记录不存在
-				throw new Exception("not found tableId:" + this.getTableId());
-			}
-			String fullname = table.getDbName() + "." + table.getTableName();
-			// long tableId = this.getTableId();
 
-			RowsLogBuffer buffer = this.getRowsBuf(charset.name());
-			BitSet columns = this.getColumns();
-			BitSet changeColumns = this.getColumns();
-			TableMeta tableMeta = null;
-			if (tableMetaCache != null) {// 入错存在table meta cache
-				tableMeta = tableMetaCache.getTableMeta(table.getDbName(),
-						table.getTableName());
-				if (tableMeta == null) {
-					throw new Exception("not found [" + fullname
-							+ "] in db , pls check!");
-				}
+		TableMapLogEvent table = this.getTable();
+		if (table == null) {
+			// tableId对应的记录不存在
+			throw new Exception("not found tableId:" + this.getTableId());
+		}
+		String fullname = table.getDbName() + "." + table.getTableName();
+		// long tableId = this.getTableId();
+
+		RowsLogBuffer buffer = this.getRowsBuf(charset.name());
+		BitSet columns = this.getColumns();
+		BitSet changeColumns = this.getColumns();
+		TableMeta tableMeta = null;
+		if (tableMetaCache != null) {// 入错存在table meta cache
+			tableMeta = tableMetaCache.getTableMeta(table.getDbName(),
+					table.getTableName());
+			if (tableMeta == null) {
+				throw new Exception("not found [" + fullname
+						+ "] in db , pls check!");
+			}
+		} else {
+			// tableMetaCache == null
+			throw new Exception("tableMetaCache is null, pls check!");
+		}
+		// nextOneRow让position++
+		while (buffer.nextOneRow(columns)) {
+			// 处理row记录
+			if ("INSERT".equals(rowDMLType)) {
+				// insert的记录放在before字段中
+				parseOneRow(tableMetaCache, buffer, columns, true, tableMeta);
+			} else if ("DELETE".equals(rowDMLType)) {
+				// delete的记录放在before字段中
+				parseOneRow(tableMetaCache, buffer, columns, false, tableMeta);
 			} else {
-				// tableMetaCache == null
-				throw new Exception("tableMetaCache is null, pls check!");
-			}
-			// nextOneRow让position++
-			while (buffer.nextOneRow(columns)) {
-				// 处理row记录
-				if ("INSERT".equals(rowDMLType)) {
-					// insert的记录放在before字段中
-					parseOneRow(tableMetaCache, buffer, columns, true,
-							tableMeta);
-				} else if ("DELETE".equals(rowDMLType)) {
-					// delete的记录放在before字段中
-					parseOneRow(tableMetaCache, buffer, columns, false,
-							tableMeta);
-				} else {
-					// update需要处理before/after
-					parseOneRow(tableMetaCache, buffer, columns, false,
-							tableMeta);
-					if (!buffer.nextOneRow(changeColumns)) {
-						break;
-					}
-					parseOneRow(tableMetaCache, buffer,
-							this.getChangeColumns(), true, tableMeta);
+				// update需要处理before/after
+				parseOneRow(tableMetaCache, buffer, columns, false, tableMeta);
+				if (!buffer.nextOneRow(changeColumns)) {
+					break;
 				}
+				parseOneRow(tableMetaCache, buffer, this.getChangeColumns(),
+						true, tableMeta);
 			}
-		} catch (Exception e) {
-			String err = e.getMessage();
-			throw new Exception("parse row data failed.err:" + err, e);
 		}
 
 	}
@@ -287,7 +279,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 			// 因为online ddl没有对应表名的alter语法，所以不会有clear cache的操作
 			tableMeta = tableMetaCache.getTableMeta(
 					this.getTable().getDbName(),
-					this.getTable().getTableName(), true);// 
+					this.getTable().getTableName(), false);//
 			if (tableMeta == null) {
 				throw new Exception("not found [" + this.getTable().getDbName()
 						+ "." + this.getTable().getTableName()
@@ -297,7 +289,7 @@ public abstract class RowsLogEvent extends BinlogEvent {
 			// 在做一次判断
 			if (tableMeta != null
 					&& columnInfo.length > tableMeta.getFileds().size()) {
-				throw new Exception("column size is not match for table:"
+				throw new IOException("column size is not match for table:"
 						+ tableMeta.getFullName() + "," + columnInfo.length
 						+ " vs " + tableMeta.getFileds().size());
 			}

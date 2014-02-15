@@ -28,16 +28,11 @@ public class MysqlConnector implements Cloneable {
 	private String password;
 	private AtomicBoolean isConnected = new AtomicBoolean(false);
 	private SocketChannel channel;
-	private String serverhost;
-	private int serverPort;
 	private MysqlConnector oldNc;
-	private AtomicBoolean prepareStop = new AtomicBoolean(false);
 
 	public MysqlConnector(String serverhost, int serverPort, String username,
 			String password) {
-		this.serverhost = serverhost;
-		this.serverPort = serverPort;
-		this.address = new InetSocketAddress(this.serverhost, this.serverPort);
+		this.address = new InetSocketAddress(serverhost, serverPort);
 		this.username = username;
 		this.password = password;
 
@@ -47,8 +42,8 @@ public class MysqlConnector implements Cloneable {
 		if (oldNc != null) {
 			oldNc.disconnect();
 		}
-		MysqlConnector nc = new MysqlConnector(this.getServerhost(),
-				this.getServerPort(), this.getUsername(), this.getPassword());
+		MysqlConnector nc = new MysqlConnector(address.getHostName(),
+				address.getPort(), this.getUsername(), this.getPassword());
 		oldNc = nc;
 		return nc;
 	}
@@ -119,9 +114,11 @@ public class MysqlConnector implements Cloneable {
 	}
 
 	public void reconnect() throws IOException {
-		// System.out.println("-----------重新链接---------------");
 		disconnect();
 		connect();
+		if (oldNc != null && !oldNc.isConnected()) {
+			oldNc.reconnect();
+		}
 	}
 
 	//
@@ -194,28 +191,8 @@ public class MysqlConnector implements Cloneable {
 		this.password = password;
 	}
 
-	public String getServerhost() {
-		return serverhost;
-	}
-
-	public void setServerhost(String serverhost) {
-		this.serverhost = serverhost;
-	}
-
-	public int getServerPort() {
-		return serverPort;
-	}
-
-	public void setServerPort(int serverPort) {
-		this.serverPort = serverPort;
-	}
-
-	public boolean isPrepareStop() {
-		return prepareStop.get();
-	}
-
-	public void setPrepareStop(boolean prepareStop) {
-		this.prepareStop.set(prepareStop);
+	public InetSocketAddress getAddress() {
+		return address;
 	}
 
 	@Override
@@ -238,6 +215,6 @@ public class MysqlConnector implements Cloneable {
 			if (c != null)
 				c.disconnect();
 		}
-		System.out.println("--------OVER---------");
+		logger.info("--------OVER---------");
 	}
 }

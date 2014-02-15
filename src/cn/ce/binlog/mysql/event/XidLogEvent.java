@@ -1,8 +1,8 @@
 package cn.ce.binlog.mysql.event;
 
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.XidLogEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.XidLogEventVO;
 
 public final class XidLogEvent extends BinlogEvent {
 	private final long xid;

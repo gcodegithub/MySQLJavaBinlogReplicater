@@ -1,5 +1,6 @@
 package cn.ce.binlog.mysql.query;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,17 +13,15 @@ import org.apache.commons.lang.StringUtils;
 import cn.ce.binlog.mysql.pack.FieldPacket;
 import cn.ce.binlog.mysql.pack.ResultSetPacket;
 import cn.ce.binlog.mysql.parse.MysqlConnector;
+import cn.ce.binlog.mysql.parse.SocketUnexpectedEndException;
 import cn.ce.binlog.mysql.query.TableMeta.FieldMeta;
+import cn.ce.cons.Const;
+import cn.ce.utils.common.BeanUtil;
+import cn.ce.utils.common.ProFileUtil;
 
 import com.google.common.base.Function;
 import com.google.common.collect.MapMaker;
 
-/**
- * 处理table meta解析和缓存
- * 
- * @author jianghang 2013-1-17 下午10:15:16
- * @version 1.0.0
- */
 public class TableMetaCache {
 
 	public static final String COLUMN_NAME = "COLUMN_NAME";
@@ -32,11 +31,17 @@ public class TableMetaCache {
 	public static final String COLUMN_DEFAULT = "COLUMN_DEFAULT";
 	public static final String EXTRA = "EXTRA";
 	private MysqlConnector connection;
-
+	private Long slaveId;
+	private Map<String, String> tableMetaSeriFullPathMap = new HashMap<String, String>();
 	// 第一层tableId,第二层schema.table,解决tableId重复，对应多张表
 	private ConcurrentMap<String, TableMeta> tableMetaCache;
 
-	public TableMetaCache(MysqlConnector con) {
+	private TableMetaCache() {
+
+	}
+
+	public TableMetaCache(MysqlConnector con, long slaveId) {
+		this.slaveId = slaveId;
 		this.connection = con;
 		tableMetaCache = new MapMaker()
 				.makeComputingMap(new Function<String, TableMeta>() {
@@ -106,14 +111,32 @@ public class TableMetaCache {
 		tableMetaCache.clear();
 	}
 
-	private TableMeta getTableMeta0(String fullname) throws Exception {
-		ResultSetPacket packet = connection.query("desc " + fullname);
-		return new TableMeta(fullname, parserTableMeta(packet));
+	private synchronized TableMeta getTableMeta0(String fullname)
+			throws Exception {
+		String serFullPath = this.getTableMetaSeriFullName(fullname);
+		TableMeta res = null;
+		String errMsg = null;
+		try {
+			ResultSetPacket packet = connection.query("desc " + fullname);
+			res = new TableMeta(fullname, parserTableMeta(packet));
+			BeanUtil.seriObject2File(serFullPath, res);
+		} catch (Throwable e) {
+			errMsg = e.getMessage();
+			e.printStackTrace();
+			System.err.println("获取表元信息出错，从文件中抽取，err:" + errMsg);
+			File f = new File(serFullPath);
+			if (f.exists() && f.canRead()) {
+				res = (TableMeta) BeanUtil.getSeriObjFromFile(serFullPath);
+			}
+		}
+		if (res == null) {
+			throw new SocketUnexpectedEndException("获取表元信息出错,err:" + errMsg);
+		}
+		return res;
 	}
 
 	private List<FieldMeta> parserTableMeta(ResultSetPacket packet) {
 		Map<String, Integer> nameMaps = new HashMap<String, Integer>(6, 1f);
-
 		int index = 0;
 		for (FieldPacket fieldPacket : packet.getFieldDescriptors()) {
 			nameMaps.put(fieldPacket.getOriginalName(), index++);
@@ -149,5 +172,19 @@ public class TableMetaCache {
 		StringBuilder builder = new StringBuilder();
 		return builder.append('`').append(schema).append('`').append('.')
 				.append('`').append(table).append('`').toString();
+	}
+
+	private String getTableMetaSeriFullName(String fullname) throws Exception {
+		if (!tableMetaSeriFullPathMap.containsKey(fullname)) {
+			String serverhost = connection.getAddress().getHostName();
+			String dir = ProFileUtil.findMsgString(
+					Const.sysconfigFileClasspath, "binlogpares.eventseri.dir");
+			String tableEventSeriFullPath = dir + "/" + serverhost + "_"
+					+ slaveId + "_TableMeta_" + fullname;
+			tableMetaSeriFullPathMap.put(fullname, tableEventSeriFullPath);
+		}
+		String tableEventSeriFullPath = tableMetaSeriFullPathMap.get(fullname);
+		return tableEventSeriFullPath;
+
 	}
 }

@@ -7,11 +7,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.web.rest.vo.BinParseResultVO;
-
-//执行线程
-public class BuzzWorker<R extends BinParseResultVO, S extends BinlogParseSession, D>
-		implements Callable<R> {
+//执行线程---
+public class BuzzWorker<D, S, R> implements Callable<R> {
 
 	private final static Log logger = LogFactory.getLog(BuzzWorker.class);
 
@@ -19,8 +16,10 @@ public class BuzzWorker<R extends BinParseResultVO, S extends BinlogParseSession
 	private final S session;
 	private final R res;
 	private final String invokeMethodName;
+	private Object[] params;
 
-	public BuzzWorker(S session, R res, D dao, String invokeMethodName) {
+	public BuzzWorker(D dao, S session, R res, String invokeMethodName,
+			Object... params) {
 		if (dao == null || session == null || res == null
 				|| StringUtils.isBlank(invokeMethodName)) {
 			throw new RuntimeException("线程执行單元初始化失败！");
@@ -29,6 +28,7 @@ public class BuzzWorker<R extends BinParseResultVO, S extends BinlogParseSession
 		this.session = session;
 		this.res = res;
 		this.invokeMethodName = invokeMethodName;
+		this.params = params;
 	}
 
 	public R call() throws Exception {
@@ -36,15 +36,13 @@ public class BuzzWorker<R extends BinParseResultVO, S extends BinlogParseSession
 		Method m;
 		try {
 			m = dao.getClass().getMethod(invokeMethodName, session.getClass(),
-					res.getClass());
-			m.invoke(dao, session, res);
-		} catch (NoSuchMethodException e) {
-			res.addErrorMsg(e.getMessage());
+					res.getClass(),Object[].class);
+			m.invoke(dao, session, res, params);
+		} catch (Exception e) {
 			logger.fatal("线程调用方法处理业务失败，invokeMethodName=" + invokeMethodName);
 			e.printStackTrace();
 			throw e;
 		}
-//		System.out.print(invokeMethodName);
 		return res;
 	}
 }

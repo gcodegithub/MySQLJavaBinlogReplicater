@@ -309,23 +309,22 @@ public final class CharsetConversion {
 		for (int i = 0; i < entries.length; i++) {
 			Entry entry = entries[i];
 
-			System.out.print(i);
-			System.out.print(',');
-			System.out.print(' ');
+			logger.info(i);
+			logger.info(',');
+			logger.info(' ');
 			if (entry != null) {
-				System.out.print(entry.mysqlCharset);
-				System.out.print(',');
-				System.out.print(' ');
-				System.out.print(entry.javaCharset);
+				logger.info(entry.mysqlCharset);
+				logger.info(',');
+				logger.info(' ');
+				logger.info(entry.javaCharset);
 				if (entry.javaCharset != null) {
-					System.out.print(',');
-					System.out.print(' ');
-					System.out.print(Charset.forName(entry.javaCharset).name());
+					logger.info(',');
+					logger.info(' ');
+					logger.info(Charset.forName(entry.javaCharset).name());
 				}
 			} else {
-				System.out.print("null");
+				logger.info("null");
 			}
-			System.out.println();
 		}
 	}
 }

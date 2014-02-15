@@ -1,23 +1,11 @@
 package cn.ce.binlog.mysql.query;
 
+import java.io.Serializable;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+public class TableMeta implements Serializable {
 
-/**
- * 描述数据meta对象,mysql binlog中对应的{@linkplain TableMapLogEvent}包含的信息不全
- * 
- * <pre>
- * 1. 主键信息
- * 2. column name
- * 3. unsigned字段
- * </pre>
- * 
- * @author jianghang 2013-1-18 下午12:24:59
- * @version 1.0.0
- */
-public class TableMeta {
-
+	private static final long serialVersionUID = 1370161574223864580L;
 	private String fullName; // schema.table
 	private List<FieldMeta> fileds;
 
@@ -42,8 +30,12 @@ public class TableMeta {
 		this.fileds = fileds;
 	}
 
-	public static class FieldMeta {
+	public static class FieldMeta implements Serializable {
 
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -123987725289591644L;
 		private String columnName;
 		private String columnType;
 		private String isNullable;

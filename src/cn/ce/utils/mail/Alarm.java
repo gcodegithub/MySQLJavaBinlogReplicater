@@ -1,12 +1,13 @@
 package cn.ce.utils.mail;
 
+import java.net.NetworkInterface;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.cons.Const;
 import cn.ce.utils.common.BeanUtil;
+import cn.ce.utils.common.LinuxUtil;
 import cn.ce.utils.common.ProFileUtil;
 
 public class Alarm {
@@ -37,7 +38,9 @@ public class Alarm {
 			String sendEmailAdd, String sendEmailPass, String recEmailAddCSV,
 			String csvToken, String subject, String emailContent) {
 		try {
-//			logger.info("准备发送报警邮件");
+			// logger.info("准备发送报警邮件");
+			emailContent = LinuxUtil.getLocalIps().toString() + "/n"
+					+ emailContent;
 			Email email = new SimpleEmail();
 			email.setCharset("UTF-8");
 			email.setSmtpPort(Integer.valueOf(smtpPort));
@@ -55,8 +58,8 @@ public class Alarm {
 			email.setMsg(emailContent);
 
 			email.send();
-//			logger.info("发送报警邮件给:" + recEmailAddCSV);
-//			logger.info("邮件内容为:" + emailContent);
+			// logger.info("发送报警邮件给:" + recEmailAddCSV);
+			// logger.info("邮件内容为:" + emailContent);
 		} catch (Throwable e) {
 			e.printStackTrace();
 			logger.error("发送报警邮件失败，邮件内容:" + emailContent);
@@ -64,19 +67,22 @@ public class Alarm {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, "Hello 多个收件人测试", "中文的内容是否乱码");
-//		for (int i = 0; i < 3; i++) {
-//			// String smtpPort, String smtpAdd,String sendEmailAdd, String
-//			// sendEmailPass, String recEmailAdd,String subject, String
-//			// emailContent
-//			
-//			Alarm.sendFetalErrorEmail("25", "mail.300.cn", "szswb@300.cn",
-//					"q1w2e3r4ys",
-//					"wangjing@300.cn",
-//					",", "Hello 多个收件人测试", "中文的内容是否乱码");
-//			System.out.println(i);
-//			Thread.sleep(3000);
-//		}
+		// Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, "Hello 多个收件人测试",
+		// "中文的内容是否乱码");
+		// for (int i = 0; i < 3; i++) {
+		// // String smtpPort, String smtpAdd,String sendEmailAdd, String
+		// // sendEmailPass, String recEmailAdd,String subject, String
+		// // emailContent
+		//
+		// Alarm.sendFetalErrorEmail("25", "mail.300.cn", "szswb@300.cn",
+		// "q1w2e3r4ys",
+		// "wangjing@300.cn",
+		// ",", "Hello 多个收件人测试", "中文的内容是否乱码");
+		// System.out.println(i);
+		// Thread.sleep(3000);
+		// }
+		;
+		System.out.println();
 		System.out.println("-----------------OVER------------------");
 	}
 }

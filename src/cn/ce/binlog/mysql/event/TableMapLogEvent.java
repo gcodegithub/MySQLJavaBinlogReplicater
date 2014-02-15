@@ -7,9 +7,9 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.RotateLogEventVO;
-import cn.ce.web.rest.vo.TableMapLogEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.RotateLogEventVO;
+import cn.ce.binlog.vo.TableMapLogEventVO;
 
 public final class TableMapLogEvent extends BinlogEvent {
 

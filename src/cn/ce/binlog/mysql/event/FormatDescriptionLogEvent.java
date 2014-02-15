@@ -3,8 +3,8 @@ package cn.ce.binlog.mysql.event;
 import java.io.IOException;
 
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.FormatDescriptionLogEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.FormatDescriptionLogEventVO;
 
 public final class FormatDescriptionLogEvent extends StartLogEventV3 {
 
@@ -103,11 +103,6 @@ public final class FormatDescriptionLogEvent extends StartLogEventV3 {
 		}
 		numberOfEventTypes = buffer.limit()
 				- (LOG_EVENT_MINIMAL_HEADER_LEN + ST_COMMON_HEADER_LEN_OFFSET + 1);
-//		if (logger.isInfoEnabled())
-//			logger.info("common_header_len= " + commonHeaderLen	+ ", number_of_event_types= " + numberOfEventTypes);
-
-		// buffer.position(LOG_EVENT_MINIMAL_HEADER_LEN
-		// + ST_COMMON_HEADER_LEN_OFFSET + 1);
 		postHeaderLen = new short[numberOfEventTypes];
 		for (int i = 0; i < numberOfEventTypes; i++) {
 			postHeaderLen[i] = (short) buffer.getUint8();
@@ -135,6 +130,8 @@ public final class FormatDescriptionLogEvent extends StartLogEventV3 {
 	/** MySQL 3.23 format descriptions. */
 	public static final FormatDescriptionLogEvent FORMAT_DESCRIPTION_EVENT_3_23 = new FormatDescriptionLogEvent(
 			1);
+
+	public static FormatDescriptionLogEvent FORMAT_DESCRIPTION_EVENT_USED = FORMAT_DESCRIPTION_EVENT_5_x;
 
 	public static FormatDescriptionLogEvent getFormatDescription(
 			final int binlogVersion) throws IOException {

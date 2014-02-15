@@ -1,12 +1,8 @@
 package cn.ce.binlog.mysql.event;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.RotateLogEventVO;
-import cn.ce.web.rest.vo.RowEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.RotateLogEventVO;
 
 public final class RotateLogEvent extends BinlogEvent {
 

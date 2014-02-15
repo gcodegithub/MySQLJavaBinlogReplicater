@@ -6,14 +6,17 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import cn.ce.binlog.mysql.pack.IPacket;
 import cn.ce.binlog.mysql.parse.SocketUnexpectedEndException;
 
 public class ReadWriteUtil {
+	private final static Log logger = LogFactory.getLog(ReadWriteUtil.class);
+
 	public static final long NULL_LENGTH = -1;
 
 	public static void main(String[] args) {
@@ -26,9 +29,6 @@ public class ReadWriteUtil {
 				ToStringStyle.MULTI_LINE_STYLE);
 		String cs = ToStringBuilder.reflectionToString(c,
 				ToStringStyle.MULTI_LINE_STYLE);
-		System.out.println(as);
-		System.out.println(bs);
-		System.out.println(cs);
 	}
 
 	public static String getFixString(byte[] byteArray, final int pos,
@@ -252,7 +252,8 @@ public class ReadWriteUtil {
 		while (buffer.hasRemaining()) {
 			int readNum = ch.read(buffer);
 			if (readNum == -1) {
-				throw new SocketUnexpectedEndException("SocketChannel Unexpected End");
+				throw new SocketUnexpectedEndException(
+						"SocketChannel Unexpected End");
 			}
 		}
 		return buffer;

@@ -1,15 +1,20 @@
 package cn.ce.binlog.mysql.event;
 
 import java.io.IOException;
-
 import java.nio.charset.Charset;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+import cn.ce.binlog.manager.Context;
+import cn.ce.binlog.mysql.parse.SimpleDdlParser;
+import cn.ce.binlog.mysql.parse.SimpleDdlParser.DdlResult;
+import cn.ce.binlog.mysql.query.TableMetaCache;
 import cn.ce.binlog.mysql.util.CharsetConversion;
 import cn.ce.binlog.session.LogBuffer;
-import cn.ce.web.rest.vo.EventVO;
-import cn.ce.web.rest.vo.QueryLogEventVO;
+import cn.ce.binlog.vo.EventVO;
+import cn.ce.binlog.vo.QueryLogEventVO;
 
 /*
  * sql/log_event.h
@@ -17,7 +22,7 @@ import cn.ce.web.rest.vo.QueryLogEventVO;
  */
 
 public class QueryLogEvent extends BinlogEvent {
-
+	private final static Log logger = LogFactory.getLog(QueryLogEvent.class);
 	public static final String BEGIN = "BEGIN";
 	public static final String COMMIT = "COMMIT";
 	public static final int MAX_SIZE_LOG_EVENT_STATUS = (1 + 4 /* type, flags2 */
@@ -181,7 +186,7 @@ public class QueryLogEvent extends BinlogEvent {
 		}
 	}
 
-	public void parseQueryEvent() {
+	public void parseQueryEvent(Context context) {
 		String queryString = this.query;
 		if (StringUtils.endsWithIgnoreCase(queryString, BEGIN)) {
 			return;
@@ -189,96 +194,54 @@ public class QueryLogEvent extends BinlogEvent {
 			return;
 
 		} else {
-			// // DDL语句处理
-			// DdlResult result = SimpleDdlParser.parse(queryString,
-			// event.getDbName());
-			//
-			// String schemaName = event.getDbName();
-			// if (StringUtils.isNotEmpty(result.getSchemaName())) {
-			// schemaName = result.getSchemaName();
-			// }
-			//
-			// String tableName = result.getTableName();
-			// EventType type = EventType.QUERY;
-			// // fixed issue https://github.com/alibaba/canal/issues/58
-			// if (result.getType() == EventType.ALTER
-			// || result.getType() == EventType.ERASE
-			// || result.getType() == EventType.CREATE
-			// || result.getType() == EventType.TRUNCATE
-			// || result.getType() == EventType.RENAME) { // 针对DDL类型
-			//
-			// if (filterQueryDdl) {
-			// return null;
-			// }
-			//
-			// type = result.getType();
-			// if (StringUtils.isEmpty(tableName)
-			// || (result.getType() == EventType.RENAME && StringUtils
-			// .isEmpty(result.getOriTableName()))) {
-			// // 如果解析不出tableName,记录一下日志，方便bugfix，目前直接抛出异常，中断解析
-			// throw new CanalParseException(
-			// "SimpleDdlParser process query failed. pls submit issue with this queryString: "
-			// + queryString
-			// + " , and DdlResult: "
-			// + result.toString());
-			// // return null;
-			// } else {
-			// // check name filter
-			// if (nameFilter != null
-			// && !nameFilter.filter(schemaName + "." + tableName)) {
-			// if (result.getType() == EventType.RENAME) {
-			// // rename校验只要源和目标满足一个就进行操作
-			// if (nameFilter != null
-			// && !nameFilter.filter(result
-			// .getOriSchemaName()
-			// + "."
-			// + result.getOriTableName())) {
-			// return null;
-			// }
-			// } else {
-			// // 其他情况返回null
-			// return null;
-			// }
-			// }
-			// }
-			// } else if (result.getType() == EventType.INSERT
-			// || result.getType() == EventType.UPDATE
-			// || result.getType() == EventType.DELETE) {
-			// // 对外返回，保证兼容，还是返回QUERY类型，这里暂不解析tableName，所以无法支持过滤
-			// if (filterQueryDml) {
-			// return null;
-			// }
-			// } else if (filterQueryDcl) {
-			// return null;
-			// }
-			//
-			// // 更新下table meta cache
-			// if (tableMetaCache != null
-			// && (result.getType() == EventType.ALTER
-			// || result.getType() == EventType.ERASE || result
-			// .getType() == EventType.RENAME)) {
-			// if (StringUtils.isNotEmpty(tableName)) {
-			// // 如果解析到了正确的表信息，则根据全名进行清除
-			// tableMetaCache.clearTableMeta(schemaName, tableName);
-			// } else {
-			// // 如果无法解析正确的表信息，则根据schema进行清除
-			// tableMetaCache.clearTableMetaWithSchemaName(schemaName);
-			// }
-			// }
-			//
-			// Header header = createHeader(binlogFileName, event.getHeader(),
-			// schemaName, tableName, type);
-			// RowChange.Builder rowChangeBuider = RowChange.newBuilder();
-			// if (result.getType() != EventType.QUERY) {
-			// rowChangeBuider.setIsDdl(true);
-			// }
-			// rowChangeBuider.setSql(queryString);
-			// if (StringUtils.isNotEmpty(event.getDbName())) {// 可能为空
-			// rowChangeBuider.setDdlSchemaName(event.getDbName());
-			// }
-			// rowChangeBuider.setEventType(result.getType());
-			// return createEntry(header, EntryType.ROWDATA, rowChangeBuider
-			// .build().toByteString());
+			// DDL语句处理
+			DdlResult result = SimpleDdlParser.parse(queryString,
+					this.getDbName());
+			String schemaName = this.getDbName();
+			if (StringUtils.isNotEmpty(result.getSchemaName())) {
+				schemaName = result.getSchemaName();
+			}
+			String tableName = result.getTableName();
+			EventType type = EventType.QUERY;
+			// fixed issue https://github.com/alibaba/canal/issues/58
+			if (result.getType() == EventType.ALTER
+					|| result.getType() == EventType.ERASE
+					|| result.getType() == EventType.CREATE
+					|| result.getType() == EventType.TRUNCATE
+					|| result.getType() == EventType.RENAME) { // 针对DDL类型
+				type = result.getType();
+				if (StringUtils.isEmpty(tableName)
+						|| (result.getType() == EventType.RENAME && StringUtils
+								.isEmpty(result.getOriTableName()))) {
+					// 如果解析不出tableName,记录一下日志，方便bugfix，目前直接抛出异常，中断解析
+					throw new RuntimeException(
+							"SimpleDdlParser process query failed. pls submit issue with this queryString: "
+									+ queryString
+									+ " , and DdlResult: "
+									+ result.toString());
+					// return null;
+				}
+			} else if (result.getType() == EventType.INSERT
+					|| result.getType() == EventType.UPDATE
+					|| result.getType() == EventType.DELETE) {
+				// 对外返回，保证兼容，还是返回QUERY类型，这里暂不解析tableName，所以无法支持过滤
+
+			}
+			TableMetaCache tableMetaCache = context.getTableMetaCache();
+			// 更新下table meta cache
+			if (tableMetaCache != null
+					&& (result.getType() == EventType.ALTER
+							|| result.getType() == EventType.ERASE || result
+							.getType() == EventType.RENAME)) {
+				logger.info("清理表元信息，因为queryString为：" + queryString);
+				if (StringUtils.isNotEmpty(tableName)) {
+					// 如果解析到了正确的表信息，则根据全名进行清除
+					tableMetaCache.clearTableMeta(schemaName, tableName);
+				} else {
+					// 如果无法解析正确的表信息，则根据schema进行清除
+					tableMetaCache.clearTableMetaWithSchemaName(schemaName);
+				}
+			}
 		}
 	}
 

@@ -1,11 +1,16 @@
 package cn.ce.utils.common;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.exec.CommandLine;
-
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -22,6 +27,21 @@ public class LinuxUtil {
 			throws Exception {
 		// 默认超时时间为30分钟
 		runLinuxLocalCommond(cmdsList, 30);
+	}
+
+	public static Set<InetAddress> getLocalIps() throws SocketException {
+		Set<InetAddress> allips = new HashSet<InetAddress>();
+		Enumeration<NetworkInterface> netInterfaces = NetworkInterface
+				.getNetworkInterfaces();
+		while (netInterfaces.hasMoreElements()) {
+			NetworkInterface ni = netInterfaces.nextElement();
+			Enumeration<InetAddress> ips = ni.getInetAddresses();
+			while (ips.hasMoreElements()) {
+				InetAddress ip = ips.nextElement();
+				allips.add(ip);
+			}
+		}
+		return allips;
 	}
 
 	public static void runLinuxLocalCommond(List<String> cmdsList, int minute)

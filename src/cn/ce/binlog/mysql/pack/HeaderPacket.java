@@ -58,12 +58,8 @@ public class HeaderPacket implements IPacket {
 
 	public static void main(String[] args) {
 		Integer length = 0x000000FF;
-
-//		System.out.println(Byte.toString((byte) (length & 0xFF)));
-//		System.out.println(Integer.toHexString(length >>> 8));
 		HeaderPacket hp = new HeaderPacket();
 		hp.setPacketBodyLength(length);
 		byte[] len = hp.toBytes();// 低位[1, 2, 3, 0]高位
-//		System.out.println(len);
 	}
 }
