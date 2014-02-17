@@ -5,7 +5,7 @@ from pymongo import Connection
 import time, datetime
 
 connection = Connection('192.168.24.1', 27018)
-db = connection['hawaii']
+db = connection['Hawaii']
 
 # 时间记录器
 def func_time(func):
