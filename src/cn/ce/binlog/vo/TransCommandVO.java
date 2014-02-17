@@ -35,7 +35,7 @@ public class TransCommandVO {
 				isDoIncludeTB = Boolean.valueOf(booltb);
 				String csvtb = ProFileUtil.findMsgString(
 						Const.filterFileClasspath, "include.tb");
-				List<String> tblist = BeanUtil.csvToList(csvtb, ",");
+				List<String> tblist = BeanUtil.csvToList(csvtb.toLowerCase(), ",");
 				includeTB.addAll(tblist);
 			}
 			String booldb = ProFileUtil.findMsgString(
@@ -44,7 +44,7 @@ public class TransCommandVO {
 				isDoIncludeDB = Boolean.valueOf(booldb);
 				String csvdb = ProFileUtil.findMsgString(
 						Const.filterFileClasspath, "include.db");
-				List<String> dblist = BeanUtil.csvToList(csvdb, ",");
+				List<String> dblist = BeanUtil.csvToList(csvdb.toLowerCase(), ",");
 				includeDB.addAll(dblist);
 			}
 			// System.out.println(includeTB);
@@ -159,13 +159,13 @@ public class TransCommandVO {
 			value.put("tbname", tablename);
 			// filter过滤器
 			if (isDoIncludeDB) {
-				if (!includeDB.contains(dbname)) {
+				if (!includeDB.contains(dbname.toLowerCase())) {
 					// System.out.println("库不在同步配置中，不进行同步,dbname:" + dbname);
 					continue;
 				}
 			}
 			if (isDoIncludeTB) {
-				if (!includeTB.contains(dbname + "." + tablename)) {
+				if (!includeTB.contains((dbname + "." + tablename).toLowerCase())) {
 					// System.out.println("表不在同步配置中，不进行同步,tablename:" +
 					// tablename);
 					continue;
@@ -226,13 +226,13 @@ public class TransCommandVO {
 					+ priValue;
 			// filter过滤器
 			if (isDoIncludeDB) {
-				if (!includeDB.contains(dbname)) {
+				if (!includeDB.contains(dbname.toLowerCase())) {
 					// System.out.println("库不在同步配置中，不进行同步,dbname:" + dbname);
 					continue;
 				}
 			}
 			if (isDoIncludeTB) {
-				if (!includeTB.contains(dbname + "." + tablename)) {
+				if (!includeTB.contains((dbname + "." + tablename).toLowerCase())) {
 					// System.out.println("表不在同步配置中，不进行同步,tablename:" +
 					// tablename);
 					continue;
