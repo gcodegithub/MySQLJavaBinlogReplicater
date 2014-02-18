@@ -92,6 +92,14 @@ public class MongoDBSourceManager extends AbsManager {
 			context.setSourceMongoPort(source_port);
 			context.setSourceMongoUser(source_username);
 			context.setSourceMongoPass(source_passwd);
+			String connectionsPerHost_s = ProFileUtil.findMsgString(
+					Const.sysconfigFileClasspath,
+					"bootstrap.mongo.connectionsPerHost");
+			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil
+					.findMsgString(Const.sysconfigFileClasspath,
+							"bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
+			context.setConnectionsPerHost_s(connectionsPerHost_s);
+			context.setThreadsAllowedToBlockForConnectionMultiplier_s(threadsAllowedToBlockForConnectionMultiplier_s);
 
 		} catch (Throwable ex) {
 			throw new RuntimeException(ex);

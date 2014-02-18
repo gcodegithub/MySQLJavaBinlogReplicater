@@ -22,6 +22,8 @@ import com.mongodb.DBObject;
 
 public class Context {
 	private volatile boolean prepareStop = false;
+	private String connectionsPerHost_s;
+	private String threadsAllowedToBlockForConnectionMultiplier_s;
 
 	private String sourceMongoIpCSV;
 	private Integer sourceMongoPort;
@@ -425,6 +427,23 @@ public class Context {
 
 	public void setOplogcheckfile(String oplogcheckfile) {
 		this.oplogcheckfile = oplogcheckfile;
+	}
+
+	public String getConnectionsPerHost_s() {
+		return connectionsPerHost_s;
+	}
+
+	public void setConnectionsPerHost_s(String connectionsPerHost_s) {
+		this.connectionsPerHost_s = connectionsPerHost_s;
+	}
+
+	public String getThreadsAllowedToBlockForConnectionMultiplier_s() {
+		return threadsAllowedToBlockForConnectionMultiplier_s;
+	}
+
+	public void setThreadsAllowedToBlockForConnectionMultiplier_s(
+			String threadsAllowedToBlockForConnectionMultiplier_s) {
+		this.threadsAllowedToBlockForConnectionMultiplier_s = threadsAllowedToBlockForConnectionMultiplier_s;
 	}
 
 	@Override

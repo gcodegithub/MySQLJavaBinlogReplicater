@@ -1,5 +1,6 @@
 package cn.ce.oplog.parse;
 
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import org.bson.types.ObjectId;
 import cn.ce.binlog.manager.AbsDataConsumer;
 import cn.ce.binlog.manager.Context;
 import cn.ce.binlog.manager.ProcessInfo;
+import cn.ce.binlog.mongo.simple.MongoConnectionFactory;
 import cn.ce.binlog.vo.OpParseResultVO;
 import cn.ce.binlog.vo.TransCommandVO;
 import cn.ce.cons.Const;
@@ -35,7 +37,14 @@ public class OplogEventConsumer extends AbsDataConsumer {
 					this.consumeFrame(context, processInfo, params);
 				} catch (MongoException.Network ex) {
 					String msg = ex.getMessage();
+					ex.printStackTrace();
 					System.err.println("目标Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
+				} catch (SocketException ex) {
+					String msg = ex.getMessage();
+					ex.printStackTrace();
+					System.err.println("目标Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
 				} catch (InterruptedException ex) {
 					if (context.isParseThreadStop()) {
 						return;

@@ -39,21 +39,14 @@ public class BinlogDumper {
 					BinlogDumper.genEvent(binlogDumpRes, context);
 				} catch (IOException ex) {
 					String err = ex.getMessage();
+					ex.printStackTrace();
 					logger.error("警告:MySQL Master网络接口超时断掉,程序会自动重新连接，err：" + err);
-					c.reconnect();
-					binlogfilename = context.getBinlogfilename();
-					binlogPosition = context.getBinlogPosition();
-					this.sendBinlogDump(c, binlogfilename, binlogPosition,
-							slaveId);
+					this.reSendBinlogDump(context);
 				} catch (InterruptedException ex) {
 					if (context.isParseThreadStop()) {
 						return;
 					} else {
-						c.reconnect();
-						binlogfilename = context.getBinlogfilename();
-						binlogPosition = context.getBinlogPosition();
-						this.sendBinlogDump(c, binlogfilename, binlogPosition,
-								slaveId);
+						this.reSendBinlogDump(context);
 					}
 
 				}
@@ -74,6 +67,24 @@ public class BinlogDumper {
 			logger.info("---------BinlogParser解析线程结束----------------");
 		}
 
+	}
+
+	private void reSendBinlogDump(Context context) {
+		while (true) {
+			try {
+				MysqlConnector c = context.getC();
+				c.reconnect();
+				String binlogfilename = context.getBinlogfilename();
+				Long binlogPosition = context.getBinlogPosition();
+				Long slaveId = context.getSlaveId();
+				this.sendBinlogDump(c, binlogfilename, binlogPosition, slaveId);
+				return;
+			} catch (Throwable e) {
+				String err = e.getMessage();
+				logger.error("警告:MySQL Master网络接口超时断掉,程序会自动重新连接，err：" + err);
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void sendBinlogDump(MysqlConnector c, String binlogfilename,

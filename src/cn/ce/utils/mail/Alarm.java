@@ -74,7 +74,7 @@ public class Alarm {
 		// // sendEmailPass, String recEmailAdd,String subject, String
 		// // emailContent
 		//
-		// Alarm.sendFetalErrorEmail("25", "mail.300.cn", "szswb@300.cn",
+		// Alarm.sendFetalErrorEmail("25", "smtp.300.cn", "szswb@300.cn",
 		// "q1w2e3r4ys",
 		// "wangjing@300.cn",
 		// ",", "Hello 多个收件人测试", "中文的内容是否乱码");

@@ -4,16 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.lang.StringUtils;
+import org.bson.types.BSONTimestamp;
 
 import cn.ce.binlog.manager.Context;
 import cn.ce.binlog.mysql.event.ColumnInfoValue;
 import cn.ce.binlog.vo.SQLRowVO;
 import cn.ce.cons.Const;
 import cn.ce.utils.common.BeanUtil;
-import cn.ce.utils.mail.Alarm;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
@@ -42,7 +41,8 @@ public abstract class AbsMongoDao {
 			if (index == null) {
 				return null;
 			}
-			ColumnInfoValue pciv = row.getRowValueInfo().get(row.getPrimaryKeyIndex());
+			ColumnInfoValue pciv = row.getRowValueInfo().get(
+					row.getPrimaryKeyIndex());
 			String priKey = pciv.getColumnName();
 			Object privalue = pciv.getReadValue();
 			return privalue;
@@ -63,7 +63,8 @@ public abstract class AbsMongoDao {
 			if (index == null) {
 				return null;
 			}
-			ColumnInfoValue pciv = row.getRowValueInfo().get(row.getPrimaryKeyIndex());
+			ColumnInfoValue pciv = row.getRowValueInfo().get(
+					row.getPrimaryKeyIndex());
 			String priKey = pciv.getColumnName();
 			return priKey;
 		} else if (r instanceof DBObject) {
@@ -126,13 +127,18 @@ public abstract class AbsMongoDao {
 		return null;
 	}
 
-	public void cutSync2Mongodb(final java.util.ArrayList list, Context ctx, Object[] params) throws Exception {
+	public void cutSync2Mongodb(final java.util.ArrayList list, Context ctx,
+			Object[] params) throws Exception {
 		boolean isMark = ctx.isMarkDelete();
 		List<Object> source = list;
 		DBCollection dbc = null;
 		Map<String, List<DBObject>> batchIns = new HashMap<String, List<DBObject>>();
 		String desc_ipcsv = ctx.getDescMongoIpCSV();
 		int port = ctx.getDescMongoPort();
+
+		String connectionsPerHost_s = ctx.getConnectionsPerHost_s();
+		String threadsAllowedToBlockForConnectionMultiplier_s = ctx
+				.getThreadsAllowedToBlockForConnectionMultiplier_s();
 		for (Object row : source) {
 			String priKey = this.getPrimaryKey(row);
 			Object privalue = this.getPrimaryValue(row);
@@ -144,18 +150,29 @@ public abstract class AbsMongoDao {
 			String dbname = this.getDbName(row);
 			String tbname = this.getTbName(row);
 			String dmlType = this.getDmlType(row);
-			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port, dbname, tbname);
+			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
+					dbname, tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s);
 
 			//
-			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname, tbname, priKey);
-			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname, tbname, "dvs_trace_code", "dvs_mysql_op_type", "dvs_time_rec", priKey, "_id");
+			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
+					tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s, priKey);
+			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
+					tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s,
+					"dvs_thread_code", "dvs_mysql_op_type", "dvs_time_rec",
+					priKey, "_id");
 			//
 			String batchKey = dbname + "." + tbname;
-			DBObject dbo = this.getMongoRow(row);
+			//
+			DBObject dbo = new BasicDBObject();
+			dbo.put("dvs_server_ts", new BSONTimestamp());
 			dbo.put("dvs_time_rec", System.currentTimeMillis());
-			dbo.put("dvs_trace_code", BeanUtil.getRandomInt(0, 100));
+			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
 			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
-
+			dbo.putAll(this.getMongoRow(row));
+			//
 			DBObject s = new BasicDBObject();
 			s.put(priKey, privalue);
 			if (Const.DELETE.equalsIgnoreCase(dmlType)) {
@@ -184,7 +201,9 @@ public abstract class AbsMongoDao {
 			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)) {
 				dbc.update(s, dbo, false, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
-				dbc.update(s, new BasicDBObject().append("$set", dbo.get("$set")),false,true);
+				dbc.update(s,
+						new BasicDBObject().append("$set", dbo.get("$set")),
+						false, true, WriteConcern.SAFE);
 			}
 
 		}// for over
@@ -196,16 +215,22 @@ public abstract class AbsMongoDao {
 			String[] splitArray = batchKey.split("\\.");
 			String dbnameString = splitArray[0];
 			String tbnameString = splitArray[1];
-			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port, dbnameString, tbnameString);
+			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
+					dbnameString, tbnameString, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s);
 			dbc.insert(valueList, WriteConcern.SAFE);
 		}
 
 	}
 
-	protected void normalSync2Mongodb(final java.util.ArrayList list, Context ctx, Object[] params) throws Exception {
+	protected void normalSync2Mongodb(final java.util.ArrayList list,
+			Context ctx, Object[] params) throws Exception {
 		boolean isMark = ctx.isMarkDelete();
 		String desc_ipcsv = ctx.getDescMongoIpCSV();
 		int port = ctx.getDescMongoPort();
+		String connectionsPerHost_s = ctx.getConnectionsPerHost_s();
+		String threadsAllowedToBlockForConnectionMultiplier_s = ctx
+				.getThreadsAllowedToBlockForConnectionMultiplier_s();
 		List<Object> source = list;
 		DBCollection dbc = null;
 		for (Object row : source) {
@@ -218,17 +243,28 @@ public abstract class AbsMongoDao {
 			String dbname = this.getDbName(row);
 			String tbname = this.getTbName(row);
 			String dmlType = this.getDmlType(row);
-			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port, dbname, tbname);
+			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
+					dbname, tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s);
 
 			//
-			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname, tbname, priKey);
-			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname, tbname, "dvs_trace_code", "dvs_mysql_op_type", "dvs_time_rec", priKey, "_id");
+			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
+					tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s, priKey);
+			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
+					tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s,
+					"dvs_thread_code", "dvs_mysql_op_type", "dvs_time_rec",
+					priKey, "_id");
 
 			//
-			DBObject dbo = this.getMongoRow(row);
-			dbo.put("dvs_trace_code", BeanUtil.getRandomInt(0, 100));
-			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
+			DBObject dbo = new BasicDBObject();
+			dbo.put("dvs_server_ts", new BSONTimestamp());
 			dbo.put("dvs_time_rec", System.currentTimeMillis());
+			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
+			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
+			dbo.putAll(this.getMongoRow(row));
+			//
 			DBObject s = new BasicDBObject();
 			s.put(priKey, privalue);
 			if (Const.DELETE.equalsIgnoreCase(dmlType)) {
@@ -237,10 +273,13 @@ public abstract class AbsMongoDao {
 				} else {
 					dbc.remove(s, WriteConcern.SAFE);
 				}
-			} else if (Const.UPDATE.equalsIgnoreCase(dmlType) || Const.INSERT.equalsIgnoreCase(dmlType)) {
+			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)
+					|| Const.INSERT.equalsIgnoreCase(dmlType)) {
 				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
-				dbc.update(s, new BasicDBObject().append("$set", dbo.get("$set")),true,true);
+				dbc.update(s,
+						new BasicDBObject().append("$set", dbo.get("$set")),
+						true, true, WriteConcern.SAFE);
 			}
 
 		}

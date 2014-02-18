@@ -1,5 +1,6 @@
 package cn.ce.binlog.manager;
 
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,16 +9,16 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.mongodb.MongoException;
-
+import cn.ce.binlog.mongo.simple.MongoConnectionFactory;
 import cn.ce.binlog.mysql.event.BinlogEvent;
-import cn.ce.binlog.mysql.parse.MysqlConnector;
 import cn.ce.binlog.vo.BinParseResultVO;
 import cn.ce.binlog.vo.EventVO;
 import cn.ce.binlog.vo.TransCommandVO;
 import cn.ce.cons.Const;
 import cn.ce.utils.common.ProFileUtil;
 import cn.ce.utils.mail.Alarm;
+
+import com.mongodb.MongoException;
 
 public class BinlogEventConsumer extends AbsDataConsumer {
 
@@ -26,14 +27,20 @@ public class BinlogEventConsumer extends AbsDataConsumer {
 
 	public void consume(final Context context, final ProcessInfo processInfo,
 			Object[] params) {
-		MysqlConnector c = context.getC();
 		try {
-			while (c.isConnected() && !context.isPrepareStop()) {
+			while (!context.isPrepareStop()) {
 				try {
 					this.consumeFrame(context, processInfo, params);
 				} catch (MongoException.Network ex) {
 					String msg = ex.getMessage();
+					ex.printStackTrace();
 					System.err.println("目标Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
+				} catch (SocketException ex) {
+					String msg = ex.getMessage();
+					ex.printStackTrace();
+					System.err.println("目标Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
 				} catch (InterruptedException ex) {
 					if (context.isParseThreadStop()) {
 						return;

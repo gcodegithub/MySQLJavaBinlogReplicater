@@ -58,7 +58,9 @@ public class MongoConnectionFactory {
 	// }
 
 	public static void createIndex(String ipcsv, Integer port, String dbname,
-			String tbname, String... columName2Indexs) throws Exception {
+			String tbname, String connectionsPerHost_s,
+			String threadsAllowedToBlockForConnectionMultiplier_s,
+			String... columName2Indexs) throws Exception {
 		StringBuilder muliKeyName = new StringBuilder();
 		BasicDBObject copmIndex = new BasicDBObject();
 		for (String oneName : columName2Indexs) {
@@ -72,7 +74,8 @@ public class MongoConnectionFactory {
 		//
 		if (indexSet.add(indexKeyName)) {
 			DBCollection dbc = MongoConnectionFactory.getMongoTBConn(ipcsv,
-					port, dbname, tbname);
+					port, dbname, tbname, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s);
 			dbc.createIndex(
 					copmIndex,
 					new BasicDBObject().append("background", true)
@@ -84,18 +87,13 @@ public class MongoConnectionFactory {
 		}
 	}
 
-	private static MongoClient getMongoClient(String ipcsv, int port) {
+	private static MongoClient getMongoClient(String ipcsv, int port,
+			String connectionsPerHost_s,
+			String threadsAllowedToBlockForConnectionMultiplier_s) {
 		String dbKeyName = ipcsv + "." + port;
 		try {
-			String connectionsPerHost_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"bootstrap.mongo.connectionsPerHost");
-			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
-
 			MongoConnectionFactory.lock.lock();
-			if (dbMap.containsKey(ipcsv)) {
+			if (dbMap.containsKey(dbKeyName)) {
 				MongoClient mc = dbMap.get(dbKeyName);
 				return mc;
 			}
@@ -123,7 +121,10 @@ public class MongoConnectionFactory {
 	}
 
 	public static DBCollection getMongoTBConn(String ipcsv, int port,
-			String mongodbname, String mongotbname) throws Exception {
+			String mongodbname, String mongotbname,
+			String connectionsPerHost_s,
+			String threadsAllowedToBlockForConnectionMultiplier_s)
+			throws Exception {
 		String tbkey = ipcsv + "." + port + "." + mongodbname + "."
 				+ mongotbname;
 		try {
@@ -133,7 +134,8 @@ public class MongoConnectionFactory {
 				return tb;
 			}
 			MongoClient mclinet = MongoConnectionFactory.getMongoClient(ipcsv,
-					port);
+					port, connectionsPerHost_s,
+					threadsAllowedToBlockForConnectionMultiplier_s);
 			DB db = mclinet.getDB(mongodbname);
 			if (!StringUtils.isBlank(username)) {
 				boolean auth = db.authenticate(username, passwd.toCharArray());
@@ -177,8 +179,8 @@ public class MongoConnectionFactory {
 		DBCollection dbc;
 		try {
 
-			dbc = MongoConnectionFactory.getMongoTBConn("", 27017, "test",
-					"log4j");
+			dbc = MongoConnectionFactory.getMongoTBConn("", 27017, "", "",
+					"test", "log4j");
 			DBObject dbo = new BasicDBObject();
 			dbo.put("key111", "value");
 			dbc.insert(dbo, WriteConcern.SAFE);

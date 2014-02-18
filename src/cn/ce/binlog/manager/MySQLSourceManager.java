@@ -144,6 +144,14 @@ public class MySQLSourceManager extends AbsManager {
 			context.setDescMongoPort(desc_port);
 			context.setDescMongoUser(desc_username);
 			context.setDescMongoPass(desc_passwd);
+			String connectionsPerHost_s = ProFileUtil.findMsgString(
+					Const.sysconfigFileClasspath,
+					"bootstrap.mongo.connectionsPerHost");
+			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil
+					.findMsgString(Const.sysconfigFileClasspath,
+							"bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
+			context.setConnectionsPerHost_s(connectionsPerHost_s);
+			context.setThreadsAllowedToBlockForConnectionMultiplier_s(threadsAllowedToBlockForConnectionMultiplier_s);
 
 		} catch (Throwable ex) {
 			throw new RuntimeException(ex);

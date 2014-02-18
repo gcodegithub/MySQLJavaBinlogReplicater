@@ -1,5 +1,7 @@
 package cn.ce.oplog.parse;
 
+import java.net.SocketException;
+
 import org.apache.commons.lang.StringUtils;
 import org.bson.types.BSONTimestamp;
 
@@ -47,8 +49,12 @@ public class MongoDeltaInfo {
 		int port = context.getSourceMongoPort();
 		String db = "local";
 		String tb = "oplog.$main";
+		String connectionsPerHost_s = context.getConnectionsPerHost_s();
+		String threadsAllowedToBlockForConnectionMultiplier_s = context
+				.getThreadsAllowedToBlockForConnectionMultiplier_s();
 		DBCollection oplogCollection = MongoConnectionFactory.getMongoTBConn(
-				ipcsv, port, db, tb);
+				ipcsv, port, db, tb, connectionsPerHost_s,
+				threadsAllowedToBlockForConnectionMultiplier_s);
 		context.setParseThread(Thread.currentThread());
 		try {
 			// oplog查询条件
@@ -83,7 +89,14 @@ public class MongoDeltaInfo {
 					}
 				} catch (MongoException.Network ex) {
 					String msg = ex.getMessage();
+					ex.printStackTrace();
 					System.err.println("源Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
+				} catch (SocketException ex) {
+					String msg = ex.getMessage();
+					ex.printStackTrace();
+					System.err.println("目标Mongodb连接断开，准备重新连接，err:" + msg);
+					MongoConnectionFactory.close();
 				} catch (InterruptedException ex) {
 					if (context.isParseThreadStop()) {
 						return;
