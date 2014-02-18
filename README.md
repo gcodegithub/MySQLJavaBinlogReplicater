@@ -9,4 +9,4 @@ MySQLJavaBinlogReplicater
 3.借鉴了canal部分binlog格式解析代码
 4.配置文件在conf目录中
 
-ppm10103@qq.com
+ppm10103 AT qq.com
