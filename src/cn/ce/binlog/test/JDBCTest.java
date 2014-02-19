@@ -40,7 +40,7 @@ public class JDBCTest {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://192.168.24.1:3306/test", "canal", "canal");
+					"jdbc:mysql://10.12.34.55:3306/test", "root", "root");
 			conn.setAutoCommit(false);
 			PreparedStatement stat = conn
 					.prepareStatement("insert into MY_TEST values(?,?,?,?)");

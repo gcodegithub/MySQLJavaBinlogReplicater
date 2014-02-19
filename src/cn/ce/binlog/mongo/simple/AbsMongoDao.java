@@ -161,14 +161,14 @@ public abstract class AbsMongoDao {
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
 					tbname, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s,
-					"dvs_thread_code", "dvs_mysql_op_type", "dvs_time_rec",
+					"dvs_thread_code", "dvs_mysql_op_type", "dvs_server_ts",
 					priKey, "_id");
 			//
 			String batchKey = dbname + "." + tbname;
 			//
 			DBObject dbo = new BasicDBObject();
 			dbo.put("dvs_server_ts", new BSONTimestamp());
-			dbo.put("dvs_time_rec", System.currentTimeMillis());
+			dbo.put("dvs_client_rec", System.currentTimeMillis());
 			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
 			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
 			dbo.putAll(this.getMongoRow(row));
@@ -254,13 +254,13 @@ public abstract class AbsMongoDao {
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
 					tbname, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s,
-					"dvs_thread_code", "dvs_mysql_op_type", "dvs_time_rec",
+					"dvs_thread_code", "dvs_mysql_op_type", "dvs_server_ts",
 					priKey, "_id");
 
 			//
 			DBObject dbo = new BasicDBObject();
 			dbo.put("dvs_server_ts", new BSONTimestamp());
-			dbo.put("dvs_time_rec", System.currentTimeMillis());
+			dbo.put("dvs_client_rec", System.currentTimeMillis());
 			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
 			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
 			dbo.putAll(this.getMongoRow(row));
