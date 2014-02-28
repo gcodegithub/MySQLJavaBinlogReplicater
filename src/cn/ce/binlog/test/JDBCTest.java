@@ -16,8 +16,8 @@ public class JDBCTest {
 			try {
 				Class.forName("com.mysql.jdbc.Driver");
 				conn = DriverManager
-						.getConnection("jdbc:mysql://192.168.24.1:3306/test",
-								"canal", "canal");
+						.getConnection("jdbc:mysql://10.12.34.55:3306/test",
+								"root", "canal");
 				conn.setAutoCommit(false);
 				PreparedStatement stat = conn
 						.prepareStatement("update log4j set CODE=?");
@@ -40,7 +40,7 @@ public class JDBCTest {
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
 			conn = DriverManager.getConnection(
-					"jdbc:mysql://10.12.34.55:3306/test", "root", "root");
+					"jdbc:mysql://192.168.24.1:3306/test", "canal", "canal");
 			conn.setAutoCommit(false);
 			PreparedStatement stat = conn
 					.prepareStatement("insert into MY_TEST values(?,?,?,?)");

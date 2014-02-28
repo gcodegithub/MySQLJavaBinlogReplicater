@@ -43,18 +43,17 @@ public class MongoDeltaInfo {
 	 * "8577977", "x" : 44, "y" : 38, "pos" : 1, "btime" : 1293955498, "ntime" :
 	 * 1294486420, "bid" : 18, "extprop" : 0, "status" : 0, "ucid" : 215 } }
 	 */
-	public void deltaInfoGet(final Context context,
-			final ProcessInfo processInfo, Object[] params) throws Exception {
+	public void deltaInfoGet(final Context context, final ProcessInfo processInfo, Object[] params) throws Exception {
 		String ipcsv = context.getSourceMongoIpCSV();
 		int port = context.getSourceMongoPort();
 		String db = "local";
-		String tb = "oplog.$main";
+		//String tb = "oplog.$main";
+		String tb=context.getMonitortb();
+		String username = context.getSourceMongoUser();
+		String passwd = context.getSourceMongoPass();
 		String connectionsPerHost_s = context.getConnectionsPerHost_s();
-		String threadsAllowedToBlockForConnectionMultiplier_s = context
-				.getThreadsAllowedToBlockForConnectionMultiplier_s();
-		DBCollection oplogCollection = MongoConnectionFactory.getMongoTBConn(
-				ipcsv, port, db, tb, connectionsPerHost_s,
-				threadsAllowedToBlockForConnectionMultiplier_s);
+		String threadsAllowedToBlockForConnectionMultiplier_s = context.getThreadsAllowedToBlockForConnectionMultiplier_s();
+		DBCollection oplogCollection = MongoConnectionFactory.getMongoTBConn(ipcsv, port, db, tb, username, passwd, connectionsPerHost_s, threadsAllowedToBlockForConnectionMultiplier_s);
 		context.setParseThread(Thread.currentThread());
 		try {
 			// oplog查询条件
@@ -70,8 +69,7 @@ public class MongoDeltaInfo {
 					// 查询条件为大于上次的检查点。
 					int ts = context.getOplogtsInt();
 					int inc = context.getOplogincInt();
-					query.append("ts", new BasicDBObject("$gt",
-							new BSONTimestamp(ts, inc)));
+					query.append("ts", new BasicDBObject("$gt", new BSONTimestamp(ts, inc)));
 					cur = oplogCollection.find(query, field);
 					if (cur.count() == 0) {
 						this.sleepCurrThread();
@@ -108,8 +106,7 @@ public class MongoDeltaInfo {
 			String err = ex.getMessage();
 			ex.printStackTrace();
 			err = "消费mongodb 增量工程停止，MongoDeltaInfo失败，原因:" + err;
-			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n"
-					+ context.toString() + "\n" + processInfo.toString());
+			Alarm.sendAlarmEmail(Const.sysconfigFileClasspath, err, err + "\n" + context.toString() + "\n" + processInfo.toString());
 		} finally {
 			context.setPrepareStop(true);
 			context.setParseThreadStop(true);

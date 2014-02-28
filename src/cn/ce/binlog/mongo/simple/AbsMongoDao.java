@@ -75,31 +75,40 @@ public abstract class AbsMongoDao {
 		return null;
 	}
 
-	protected String getDbName(Object r) {
-		if (r instanceof SQLRowVO) {
+	protected String getDbName(Object r, String forcedbname) {
+		String dbname = null;
+		if (!StringUtils.isBlank(forcedbname)) {
+			dbname = forcedbname;
+		} else if (r instanceof SQLRowVO) {
 			SQLRowVO row = (SQLRowVO) r;
-			String dbname = row.getDbname();
-			return dbname;
+			dbname = row.getDbname();
+
 		} else if (r instanceof DBObject) {
 			DBObject row = (DBObject) r;
-			String dbname = row.get("dbname").toString();
-			return dbname;
+			dbname = row.get("dbname").toString();
 		}
-		return null;
+		return dbname;
 	}
 
 	// tbname
-	protected String getTbName(Object r) {
+	protected String getTbName(Object r, String forcedbname) {
+		String tbname = null;
+		String dbname = null;
 		if (r instanceof SQLRowVO) {
 			SQLRowVO row = (SQLRowVO) r;
-			String tbname = row.getTablename();
-			return tbname;
+			tbname = row.getTablename();
+			dbname = row.getDbname();
+
 		} else if (r instanceof DBObject) {
 			DBObject row = (DBObject) r;
-			String tbname = row.get("tbname").toString();
-			return tbname;
+			tbname = row.get("tbname").toString();
+			dbname = row.get("dbname").toString();
+
 		}
-		return null;
+		if (!StringUtils.isBlank(forcedbname)) {
+			tbname = dbname + "_" + tbname;
+		}
+		return tbname;
 	}
 
 	protected String getDmlType(Object r) {
@@ -115,6 +124,20 @@ public abstract class AbsMongoDao {
 		return null;
 	}
 
+	protected long getRecWhen(Object r) {
+		if (r instanceof SQLRowVO) {
+			SQLRowVO row = (SQLRowVO) r;
+			long when = row.getWhen();
+			return when;
+		} else if (r instanceof DBObject) {
+			DBObject row = (DBObject) r;
+			long when = (Long) row.get("when");
+			return when;
+		}
+		return -1;
+	}
+
+	// Object
 	protected DBObject getMongoRow(Object r) throws Exception {
 		if (r instanceof SQLRowVO) {
 			SQLRowVO row = (SQLRowVO) r;
@@ -139,6 +162,8 @@ public abstract class AbsMongoDao {
 		String connectionsPerHost_s = ctx.getConnectionsPerHost_s();
 		String threadsAllowedToBlockForConnectionMultiplier_s = ctx
 				.getThreadsAllowedToBlockForConnectionMultiplier_s();
+		String username = ctx.getDescMongoUser();
+		String passwd = ctx.getDescMongoPass();
 		for (Object row : source) {
 			String priKey = this.getPrimaryKey(row);
 			Object privalue = this.getPrimaryValue(row);
@@ -146,17 +171,18 @@ public abstract class AbsMongoDao {
 				System.err.println("一行数据主键值为null，忽略掉该数据,row:" + row);
 				continue;
 			}
+			String forcedbname = ctx.getForcedbname();
+			String dbname = this.getDbName(row, forcedbname);
+			String tbname = this.getTbName(row, forcedbname);
 
-			String dbname = this.getDbName(row);
-			String tbname = this.getTbName(row);
 			String dmlType = this.getDmlType(row);
 			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
-					dbname, tbname, connectionsPerHost_s,
+					dbname, tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s);
 
 			//
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
-					tbname, connectionsPerHost_s,
+					tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s, priKey);
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
 					tbname, connectionsPerHost_s,
@@ -171,6 +197,7 @@ public abstract class AbsMongoDao {
 			dbo.put("dvs_client_rec", System.currentTimeMillis());
 			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
 			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
+			dbo.put("when", this.getRecWhen(row));
 			dbo.putAll(this.getMongoRow(row));
 			//
 			DBObject s = new BasicDBObject();
@@ -199,7 +226,7 @@ public abstract class AbsMongoDao {
 					valueList.add(dbo);
 				}
 			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)) {
-				dbc.update(s, dbo, false, false, WriteConcern.SAFE);
+				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
 				dbc.update(s,
 						new BasicDBObject().append("$set", dbo.get("$set")),
@@ -216,7 +243,8 @@ public abstract class AbsMongoDao {
 			String dbnameString = splitArray[0];
 			String tbnameString = splitArray[1];
 			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
-					dbnameString, tbnameString, connectionsPerHost_s,
+					dbnameString, tbnameString, username, passwd,
+					connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s);
 			dbc.insert(valueList, WriteConcern.SAFE);
 		}
@@ -231,6 +259,8 @@ public abstract class AbsMongoDao {
 		String connectionsPerHost_s = ctx.getConnectionsPerHost_s();
 		String threadsAllowedToBlockForConnectionMultiplier_s = ctx
 				.getThreadsAllowedToBlockForConnectionMultiplier_s();
+		String username = ctx.getDescMongoUser();
+		String passwd = ctx.getDescMongoPass();
 		List<Object> source = list;
 		DBCollection dbc = null;
 		for (Object row : source) {
@@ -240,19 +270,20 @@ public abstract class AbsMongoDao {
 				System.err.println("一行数据主键值为null，忽略掉该数据,row:" + row);
 				continue;
 			}
-			String dbname = this.getDbName(row);
-			String tbname = this.getTbName(row);
+			String forcedbname = ctx.getForcedbname();
+			String dbname = this.getDbName(row, forcedbname);
+			String tbname = this.getTbName(row, forcedbname);
 			String dmlType = this.getDmlType(row);
 			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
-					dbname, tbname, connectionsPerHost_s,
+					dbname, tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s);
 
 			//
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
-					tbname, connectionsPerHost_s,
+					tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s, priKey);
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
-					tbname, connectionsPerHost_s,
+					tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s,
 					"dvs_thread_code", "dvs_mysql_op_type", "dvs_server_ts",
 					priKey, "_id");
@@ -263,6 +294,7 @@ public abstract class AbsMongoDao {
 			dbo.put("dvs_client_rec", System.currentTimeMillis());
 			dbo.put("dvs_thread_code", BeanUtil.getRandomInt(1, 100));
 			dbo.put("dvs_mysql_op_type", dmlType.toUpperCase());
+			dbo.put("when", this.getRecWhen(row));
 			dbo.putAll(this.getMongoRow(row));
 			//
 			DBObject s = new BasicDBObject();

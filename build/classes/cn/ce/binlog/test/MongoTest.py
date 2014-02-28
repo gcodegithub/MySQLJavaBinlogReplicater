@@ -4,7 +4,7 @@
 from pymongo import Connection
 import time, datetime
 
-connection = Connection('192.168.24.1', 27018)
+connection = Connection('10.12.34.51', 30000)
 db = connection['Hawaii']
 
 # 时间记录器
@@ -36,5 +36,5 @@ def insert(num):
 
 if __name__ == "__main__":
 	# 设定循环
-    num = 10
+    num = 100000
     insert(num)

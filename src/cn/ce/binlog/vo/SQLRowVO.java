@@ -12,8 +12,18 @@ public class SQLRowVO {
 	private String dbname;
 	private String tablename;
 	private Integer primaryKeyIndex;
-	private List<ColumnInfoValue> rowValueInfo = new ArrayList<ColumnInfoValue>(50);
+	private List<ColumnInfoValue> rowValueInfo = new ArrayList<ColumnInfoValue>(
+			50);
 	private String dmlType;
+	private long when;
+
+	public long getWhen() {
+		return when;
+	}
+
+	public void setWhen(long when) {
+		this.when = when;
+	}
 
 	public String getDbname() {
 		return dbname;

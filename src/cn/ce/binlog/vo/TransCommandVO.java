@@ -35,7 +35,8 @@ public class TransCommandVO {
 				isDoIncludeTB = Boolean.valueOf(booltb);
 				String csvtb = ProFileUtil.findMsgString(
 						Const.filterFileClasspath, "include.tb");
-				List<String> tblist = BeanUtil.csvToList(csvtb.toLowerCase(), ",");
+				List<String> tblist = BeanUtil.csvToList(csvtb.toLowerCase(),
+						",");
 				includeTB.addAll(tblist);
 			}
 			String booldb = ProFileUtil.findMsgString(
@@ -44,7 +45,8 @@ public class TransCommandVO {
 				isDoIncludeDB = Boolean.valueOf(booldb);
 				String csvdb = ProFileUtil.findMsgString(
 						Const.filterFileClasspath, "include.db");
-				List<String> dblist = BeanUtil.csvToList(csvdb.toLowerCase(), ",");
+				List<String> dblist = BeanUtil.csvToList(csvdb.toLowerCase(),
+						",");
 				includeDB.addAll(dblist);
 			}
 			// System.out.println(includeTB);
@@ -110,12 +112,13 @@ public class TransCommandVO {
 				RowEventVO revo = (RowEventVO) evo;
 				int columnLen = revo.getColumnLen();
 				String rowDMLType = revo.getRowDMLType();
+				long when = revo.getWhen();
 				List<ColumnInfoValue> beforeColumnInfo = revo
 						.getBeforeColumnInfo();
 				List<ColumnInfoValue> afterColumnInfo = revo
 						.getAfterColumnInfo();
-				this.splitRow(context, columnLen, rowDMLType, beforeColumnInfo,
-						afterColumnInfo);
+				this.splitRow(context, columnLen, rowDMLType, when,
+						beforeColumnInfo, afterColumnInfo);
 			} else if (evo instanceof StopLogEventVO) {
 
 			} else {
@@ -165,7 +168,8 @@ public class TransCommandVO {
 				}
 			}
 			if (isDoIncludeTB) {
-				if (!includeTB.contains((dbname + "." + tablename).toLowerCase())) {
+				if (!includeTB.contains((dbname + "." + tablename)
+						.toLowerCase())) {
 					// System.out.println("表不在同步配置中，不进行同步,tablename:" +
 					// tablename);
 					continue;
@@ -183,7 +187,7 @@ public class TransCommandVO {
 	}
 
 	private void splitRow(Context context, int columnLen, String rowDMLType,
-			List<ColumnInfoValue> beforeColumnInfo,
+			long when, List<ColumnInfoValue> beforeColumnInfo,
 			List<ColumnInfoValue> afterColumnInfo) throws Exception {
 		TableMapLogEventVO tevo = context.getConsumeTableMapLogEventVO();
 		String dbname = tevo.getDbname();
@@ -191,18 +195,18 @@ public class TransCommandVO {
 		this.setBinlogFileName(tevo.getBinfile());
 		if ("UPDATE".equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
-					afterColumnInfo);
+					when, afterColumnInfo);
 		} else if ("INSERT".equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
-					afterColumnInfo);
+					when, afterColumnInfo);
 		} else if ("DELETE".equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
-					beforeColumnInfo);
+					when, beforeColumnInfo);
 		}
 	}
 
 	private void columInfo2RowInfo(String dbname, String dmlType,
-			String tablename, int columnLen, List<ColumnInfoValue> cif) {
+			String tablename, int columnLen, long when,List<ColumnInfoValue> cif) {
 		int pos = 0;
 
 		for (int j = 0; j < cif.size() / columnLen; j++) {
@@ -210,6 +214,7 @@ public class TransCommandVO {
 			Object.setDbname(dbname);
 			Object.setTablename(tablename);
 			Object.setDmlType(dmlType);
+			Object.setWhen(when);
 			String priValue = "";
 			String prikey = "";
 			for (int i = 0; i < columnLen; i++) {
@@ -232,7 +237,8 @@ public class TransCommandVO {
 				}
 			}
 			if (isDoIncludeTB) {
-				if (!includeTB.contains((dbname + "." + tablename).toLowerCase())) {
+				if (!includeTB.contains((dbname + "." + tablename)
+						.toLowerCase())) {
 					// System.out.println("表不在同步配置中，不进行同步,tablename:" +
 					// tablename);
 					continue;

@@ -16,35 +16,29 @@ import cn.ce.utils.common.ProFileUtil;
 
 public class MongoDBSourceManager extends AbsManager {
 
-	private final static Log logger = LogFactory
-			.getLog(MongoDBSourceManager.class);
+	private final static Log				logger		= LogFactory.getLog(MongoDBSourceManager.class);
 
-	private final static MongoDeltaInfo deltaInfo = new MongoDeltaInfo();
-	private final static OplogEventConsumer consumer = new OplogEventConsumer();
-	private Context context;
-	private final ProcessInfo process = new ProcessInfo();
+	private final static MongoDeltaInfo		deltaInfo	= new MongoDeltaInfo();
+	private final static OplogEventConsumer	consumer	= new OplogEventConsumer();
+	private Context							context;
+	private final ProcessInfo				process		= new ProcessInfo();
 
 	@Override
 	public void init() {
 		try {
 			context = new Context();
 			context.setPrepareStop(false);
-			String clazz = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "consu.impclass");
+			String clazz = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "consu.impclass");
 			Class[] parameter = new Class[] { Context.class };
 			Constructor con = Class.forName(clazz).getConstructor(parameter);
 			ConsumeDaoIF curd = (ConsumeDaoIF) con.newInstance(context);
 			consumer.setCurd(curd);
-			String posFileAbspath = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"oplogparse.checkpoint.fullpath.file");
+			String posFileAbspath = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "oplogparse.checkpoint.fullpath.file");
 			context.setOplogcheckfile(posFileAbspath);
 
 			//
-			String oplogts = ProFileUtil.getValueFromProAbsPath(posFileAbspath,
-					"mongodb.checkpoint.ts");
-			String oploginc = ProFileUtil.getValueFromProAbsPath(
-					posFileAbspath, "mongodb.checkpoint.inc");
+			String oplogts = ProFileUtil.getValueFromProAbsPath(posFileAbspath, "mongodb.checkpoint.ts");
+			String oploginc = ProFileUtil.getValueFromProAbsPath(posFileAbspath, "mongodb.checkpoint.inc");
 			if (StringUtils.isBlank(oplogts)) {
 				logger.info("没有输入检查点信息，从头开始");
 				oplogts = "0";
@@ -53,51 +47,39 @@ public class MongoDBSourceManager extends AbsManager {
 			context.setOplogtsInt(new Integer(oplogts));
 			context.setOplogincInt(new Integer(oploginc));
 			//
-			String isMark_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "consu.ismark");
+			String isMark_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "consu.ismark");
 			Boolean isMarkDelete = new Boolean(isMark_s);
 			context.setMarkDelete(isMarkDelete);
-			String slaveId = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.slaveid");
+			String slaveId = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.slaveid");
 			context.setSlaveId(new Long(slaveId));
 			//
-			String desc_ipcsv = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.seeds");
-			String desc_port_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.port");
-			String desc_username = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.user");
-			String desc_passwd = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.pass");
+			String monitortb = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.source.mongo.monitortb");
+			String desc_ipcsv = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.seeds");
+			String desc_port_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.port");
+			String desc_username = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.user");
+			String desc_passwd = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.pass");
+			String forcedbname = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.forcedbname");
 			Integer desc_port = new Integer(desc_port_s);
+			context.setMonitortb(monitortb);
 			context.setDescMongoIpCSV(desc_ipcsv);
 			context.setDescMongoPort(desc_port);
 			context.setDescMongoUser(desc_username);
 			context.setDescMongoPass(desc_passwd);
+			context.setForcedbname(forcedbname);
+			
 			//
-			String source_ipcsv = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"bootstrap.source.mongo.seeds");
-			String source_port_s = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.source.mongo.port");
-			String source_username = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.source.mongo.user");
-			String source_passwd = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.source.mongo.pass");
+			
+			String source_ipcsv = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.source.mongo.seeds");
+			String source_port_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.source.mongo.port");
+			String source_username = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.source.mongo.user");
+			String source_passwd = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.source.mongo.pass");
 			Integer source_port = new Integer(source_port_s);
 			context.setSourceMongoIpCSV(source_ipcsv);
 			context.setSourceMongoPort(source_port);
 			context.setSourceMongoUser(source_username);
 			context.setSourceMongoPass(source_passwd);
-			String connectionsPerHost_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"bootstrap.mongo.connectionsPerHost");
-			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
+			String connectionsPerHost_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.connectionsPerHost");
+			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
 			context.setConnectionsPerHost_s(connectionsPerHost_s);
 			context.setThreadsAllowedToBlockForConnectionMultiplier_s(threadsAllowedToBlockForConnectionMultiplier_s);
 
@@ -111,11 +93,9 @@ public class MongoDBSourceManager extends AbsManager {
 			this.stop();
 			this.init();
 			System.out.println("-----------OPLOG工程容器准备启动---------------");
-			BuzzWorker<MongoDeltaInfo, Context, ProcessInfo> worker = new BuzzWorker<MongoDeltaInfo, Context, ProcessInfo>(
-					deltaInfo, context, process, "deltaInfoGet");
+			BuzzWorker<MongoDeltaInfo, Context, ProcessInfo> worker = new BuzzWorker<MongoDeltaInfo, Context, ProcessInfo>(deltaInfo, context, process, "deltaInfoGet");
 			ThreadPoolUtils.doBuzzToExePool(worker);
-			BuzzWorker<OplogEventConsumer, Context, ProcessInfo> c = new BuzzWorker<OplogEventConsumer, Context, ProcessInfo>(
-					consumer, context, process, "consume", null);
+			BuzzWorker<OplogEventConsumer, Context, ProcessInfo> c = new BuzzWorker<OplogEventConsumer, Context, ProcessInfo>(consumer, context, process, "consume", null);
 			ThreadPoolUtils.doBuzzToExePool(c);
 			System.out.println("-----------OPLOG工程容器启动完成---------------");
 		} catch (Throwable ex) {
@@ -129,14 +109,12 @@ public class MongoDBSourceManager extends AbsManager {
 			if (context == null) {
 				return;
 			}
-			if (context.getParseThread() == null
-					&& context.getConsumerThread() == null) {
+			if (context.getParseThread() == null && context.getConsumerThread() == null) {
 				return;
 			}
 			System.out.println("-----------工程容器准备关闭---------------");
 			context.setPrepareStop(true);
-			while (!(context.isParseThreadStop() && context
-					.isConsumerThreadStop())) {
+			while (!(context.isParseThreadStop() && context.isConsumerThreadStop())) {
 				Thread.sleep(500);
 				if (!context.isParseThreadStop()) {
 					context.getParseThread().interrupt();

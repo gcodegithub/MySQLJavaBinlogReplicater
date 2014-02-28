@@ -84,6 +84,7 @@ public class OplogEventConsumer extends AbsDataConsumer {
 			}
 			BSONTimestamp tsObj = (BSONTimestamp) dbObject.get("ts");
 			Integer ts = tsObj.getTime();
+			long when = new Long(ts);
 			Integer inc = tsObj.getInc();
 			if (ts == null || inc == null) {
 				continue;
@@ -100,6 +101,7 @@ public class OplogEventConsumer extends AbsDataConsumer {
 			 * "name_2"}}}
 			 */
 			DBObject value = (DBObject) dbObject.get("o");
+			value.put("when", when);
 			value.put("ns", ns);
 			value.put("op", dbObject.get("op"));
 			String prikey = "_id";

@@ -21,63 +21,64 @@ import cn.ce.utils.common.ProFileUtil;
 import com.mongodb.DBObject;
 
 public class Context {
-	private volatile boolean prepareStop = false;
-	private String connectionsPerHost_s;
-	private String threadsAllowedToBlockForConnectionMultiplier_s;
+	private volatile boolean						prepareStop					= false;
+	private String									connectionsPerHost_s;
+	private String									threadsAllowedToBlockForConnectionMultiplier_s;
+	//oplog所在库名
+	private String									monitortb;
+	//所有源库数据都往一个库里导
+	private String									forcedbname;
+	private String									sourceMongoIpCSV;
+	private Integer									sourceMongoPort;
+	private String									sourceMongoUser;
+	private String									sourceMongoPass;
 
-	private String sourceMongoIpCSV;
-	private Integer sourceMongoPort;
-	private String sourceMongoUser;
-	private String sourceMongoPass;
+	private String									descMongoIpCSV;
+	private Integer									descMongoPort;
+	private String									descMongoUser;
+	private String									descMongoPass;
 
-	private String descMongoIpCSV;
-	private Integer descMongoPort;
-	private String descMongoUser;
-	private String descMongoPass;
+	private MysqlConnector							c;
+	private String									serverhost;
+	private Integer									serverPort;
+	private String									username;
+	private String									password;
+	private Long									slaveId;
+	private String									binlogfilename;
+	private Long									binlogPosition;
+	private String									binlogcheckfile;
 
-	private MysqlConnector c;
-	private String serverhost;
-	private Integer serverPort;
-	private String username;
-	private String password;
-	private Long slaveId;
-	private String binlogfilename;
-	private Long binlogPosition;
-	private String binlogcheckfile;
+	private Integer									oplogtsInt;
+	private Integer									oplogincInt;
+	private String									oplogcheckfile;
 
-	private Integer oplogtsInt;
-	private Integer oplogincInt;
-	private String oplogcheckfile;
+	private String									zkConInfo;
 
-	private String zkConInfo;
+	private Thread									parseThread;
+	private Thread									consumerThread;
+	private volatile boolean						parseThreadStop				= false;
+	private volatile boolean						consumerThreadStop			= false;
 
-	private Thread parseThread;
-	private Thread consumerThread;
-	private volatile boolean parseThreadStop = false;
-	private volatile boolean consumerThreadStop = false;
-
-	private volatile boolean isConsuInSleep = false;
+	private volatile boolean						isConsuInSleep				= false;
 
 	// 删除是否为标记删除
-	private boolean isMarkDelete = false;
+	private boolean									isMarkDelete				= false;
 
-	private final int binQueueSize = 10000;
-	private final int opQueueSize = 5000;
+	private final int								binQueueSize				= 10000;
+	private final int								opQueueSize					= 5000;
 
-	private final LinkedBlockingQueue<BinlogEvent> eventVOQueue = new LinkedBlockingQueue<BinlogEvent>(
-			binQueueSize * 2);
+	private final LinkedBlockingQueue<BinlogEvent>	eventVOQueue				= new LinkedBlockingQueue<BinlogEvent>(binQueueSize * 2);
 
-	private final LinkedBlockingQueue<DBObject> dbObjectQueue = new LinkedBlockingQueue<DBObject>(
-			opQueueSize * 2);
+	private final LinkedBlockingQueue<DBObject>		dbObjectQueue				= new LinkedBlockingQueue<DBObject>(opQueueSize * 2);
 	// id和名字映射
-	private TableMapLogEventVO consumeTableMapLogEventVO;
-	private String consumeTableMapLogEventVOFileCacheString;
+	private TableMapLogEventVO						consumeTableMapLogEventVO;
+	private String									consumeTableMapLogEventVOFileCacheString;
 
-	private final Map<Long, TableMapLogEvent> mapOfTable = new HashMap<Long, TableMapLogEvent>();
-	private Map<Long, String> tableEventSeriFullPathMap = new HashMap<Long, String>();
+	private final Map<Long, TableMapLogEvent>		mapOfTable					= new HashMap<Long, TableMapLogEvent>();
+	private Map<Long, String>						tableEventSeriFullPathMap	= new HashMap<Long, String>();
 
 	// desc 而来
-	private TableMetaCache tableMetaCache;
+	private TableMetaCache							tableMetaCache;
 
 	public final void putTable(TableMapLogEvent mapEvent) throws Exception {
 		Long tableId = mapEvent.getTableId();
@@ -91,8 +92,7 @@ public class Context {
 		TableMapLogEvent mapEvent = mapOfTable.get(Long.valueOf(tableId));
 		if (mapEvent == null) {
 			String serFullPath = this.getTableMapLogEventSeriFullName(tableId);
-			mapEvent = (TableMapLogEvent) BeanUtil
-					.getSeriObjFromFile(serFullPath);
+			mapEvent = (TableMapLogEvent) BeanUtil.getSeriObjFromFile(serFullPath);
 		}
 		return mapEvent;
 	}
@@ -106,13 +106,10 @@ public class Context {
 	}
 
 	// parse use
-	private String getTableMapLogEventSeriFullName(Long tableId)
-			throws Exception {
+	private String getTableMapLogEventSeriFullName(Long tableId) throws Exception {
 		if (!tableEventSeriFullPathMap.containsKey(tableId)) {
-			String dir = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "binlogpares.eventseri.dir");
-			String tableEventSeriFullPath = dir + "/" + serverhost + "_"
-					+ slaveId + "_TableMapLogEvent_" + tableId;
+			String dir = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "binlogpares.eventseri.dir");
+			String tableEventSeriFullPath = dir + "/" + serverhost + "_" + slaveId + "_TableMapLogEvent_" + tableId;
 			tableEventSeriFullPathMap.put(tableId, tableEventSeriFullPath);
 		}
 		String tableEventSeriFullPath = tableEventSeriFullPathMap.get(tableId);
@@ -124,15 +121,10 @@ public class Context {
 	public String getConsumeTMapLEVOFileCacheString() throws Exception {
 		if (StringUtils.isBlank(this.consumeTableMapLogEventVOFileCacheString)) {
 			String fileName = "consumeTableMapLogEventVO.cache";
-			String serverhost = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mysql.master.ip");
-			String slaveId = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.slaveid");
-			String dir = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"bootstrap.mysql.vo.filepool.dir");
-			String fileFullPath = dir + "/" + serverhost + "_" + slaveId + "_"
-					+ fileName;
+			String serverhost = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.master.ip");
+			String slaveId = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.slaveid");
+			String dir = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.vo.filepool.dir");
+			String fileFullPath = dir + "/" + serverhost + "_" + slaveId + "_" + fileName;
 			this.consumeTableMapLogEventVOFileCacheString = fileFullPath;
 		}
 		return this.consumeTableMapLogEventVOFileCacheString;
@@ -316,8 +308,7 @@ public class Context {
 	public TableMapLogEventVO getConsumeTableMapLogEventVO() throws Exception {
 		if (this.consumeTableMapLogEventVO == null) {
 			String fileFullPath = this.getConsumeTMapLEVOFileCacheString();
-			consumeTableMapLogEventVO = BeanUtil
-					.getSeriObjFromFile(fileFullPath);
+			consumeTableMapLogEventVO = BeanUtil.getSeriObjFromFile(fileFullPath);
 		}
 		return consumeTableMapLogEventVO;
 	}
@@ -330,8 +321,7 @@ public class Context {
 		this.zkConInfo = zkConInfo;
 	}
 
-	public void setConsumeTableMapLogEventVO(
-			TableMapLogEventVO consumeTableMapLogEventVO) throws Exception {
+	public void setConsumeTableMapLogEventVO(TableMapLogEventVO consumeTableMapLogEventVO) throws Exception {
 		this.consumeTableMapLogEventVO = consumeTableMapLogEventVO;
 		String fileFullPath = this.getConsumeTMapLEVOFileCacheString();
 		File cacheFile = new File(fileFullPath);
@@ -441,15 +431,43 @@ public class Context {
 		return threadsAllowedToBlockForConnectionMultiplier_s;
 	}
 
-	public void setThreadsAllowedToBlockForConnectionMultiplier_s(
-			String threadsAllowedToBlockForConnectionMultiplier_s) {
+	public void setThreadsAllowedToBlockForConnectionMultiplier_s(String threadsAllowedToBlockForConnectionMultiplier_s) {
 		this.threadsAllowedToBlockForConnectionMultiplier_s = threadsAllowedToBlockForConnectionMultiplier_s;
+	}
+
+	/**
+	 * @return the monitortb
+	 */
+	public String getMonitortb() {
+		return monitortb;
+	}
+
+	/**
+	 * @param monitortb
+	 *            the monitortb to set
+	 */
+	public void setMonitortb(String monitortb) {
+		this.monitortb = monitortb;
+	}
+
+	/**
+	 * @return the forcedbname
+	 */
+	public String getForcedbname() {
+		return forcedbname;
+	}
+
+	/**
+	 * @param forcedbname
+	 *            the forcedbname to set
+	 */
+	public void setForcedbname(String forcedbname) {
+		this.forcedbname = forcedbname;
 	}
 
 	@Override
 	public String toString() {
-		String s = ToStringBuilder.reflectionToString(this,
-				ToStringStyle.MULTI_LINE_STYLE);
+		String s = ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
 		return s;
 	}
 }

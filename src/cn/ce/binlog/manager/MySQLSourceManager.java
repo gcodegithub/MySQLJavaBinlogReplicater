@@ -14,12 +14,11 @@ import cn.ce.cons.Const;
 import cn.ce.utils.common.ProFileUtil;
 
 public class MySQLSourceManager extends AbsManager {
-	private final static Log logger = LogFactory
-			.getLog(MySQLSourceManager.class);
-	private final BinlogDumper producter = new BinlogDumper();
-	private final BinlogEventConsumer consumer = new BinlogEventConsumer();
-	private Context context;
-	private final ProcessInfo process = new ProcessInfo();
+	private final static Log			logger		= LogFactory.getLog(MySQLSourceManager.class);
+	private final BinlogDumper			producter	= new BinlogDumper();
+	private final BinlogEventConsumer	consumer	= new BinlogEventConsumer();
+	private Context						context;
+	private final ProcessInfo			process		= new ProcessInfo();
 
 	@Override
 	public void begin() {
@@ -27,11 +26,9 @@ public class MySQLSourceManager extends AbsManager {
 			this.stop();
 			this.init();
 			System.out.println("-----------BINLOG工程容器准备启动---------------");
-			BuzzWorker<BinlogDumper, Context, ProcessInfo> p = new BuzzWorker<BinlogDumper, Context, ProcessInfo>(
-					producter, context, process, "dump", null);
+			BuzzWorker<BinlogDumper, Context, ProcessInfo> p = new BuzzWorker<BinlogDumper, Context, ProcessInfo>(producter, context, process, "dump", null);
 			ThreadPoolUtils.doBuzzToExePool(p);
-			BuzzWorker<BinlogEventConsumer, Context, ProcessInfo> c = new BuzzWorker<BinlogEventConsumer, Context, ProcessInfo>(
-					consumer, context, process, "consume", null);
+			BuzzWorker<BinlogEventConsumer, Context, ProcessInfo> c = new BuzzWorker<BinlogEventConsumer, Context, ProcessInfo>(consumer, context, process, "consume", null);
 			ThreadPoolUtils.doBuzzToExePool(c);
 			System.out.println("-----------BINLOG工程容器启动完成---------------");
 		} catch (Throwable ex) {
@@ -45,14 +42,12 @@ public class MySQLSourceManager extends AbsManager {
 			if (context == null) {
 				return;
 			}
-			if (context.getParseThread() == null
-					&& context.getConsumerThread() == null) {
+			if (context.getParseThread() == null && context.getConsumerThread() == null) {
 				return;
 			}
 			System.out.println("-----------工程容器准备关闭---------------");
 			context.setPrepareStop(true);
-			while (!(context.isParseThreadStop() && context
-					.isConsumerThreadStop())) {
+			while (!(context.isParseThreadStop() && context.isConsumerThreadStop())) {
 				Thread.sleep(500);
 				if (!context.isParseThreadStop()) {
 					context.getParseThread().interrupt();
@@ -73,38 +68,24 @@ public class MySQLSourceManager extends AbsManager {
 		try {
 			context = new Context();
 			context.setPrepareStop(false);
-			String clazz = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "consu.impclass");
+			String clazz = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "consu.impclass");
 
 			Class[] parameter = new Class[] { Context.class };
 			Constructor con = Class.forName(clazz).getConstructor(parameter);
 			ConsumeDaoIF curd = (ConsumeDaoIF) con.newInstance(context);
 			consumer.setCurd(curd);
 			//
-			String posFileAbspath = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"binlogparse.checkpoint.fullpath.file");
+			String posFileAbspath = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "binlogparse.checkpoint.fullpath.file");
 			context.setBinlogcheckfile(posFileAbspath);
 			//
-			String slaveId = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.slaveid");
-			String serverhost = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mysql.master.ip");
-			String serverPort = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mysql.master.port");
-			String username = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mysql.master.user");
-			String password = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mysql.master.pass");
-			MysqlConnector c = new MysqlConnector(serverhost, new Integer(
-					serverPort), username, password);
-			String binlogfilename = ProFileUtil.getValueFromProAbsPath(
-					posFileAbspath, slaveId + ".filenameKey");
-			String binlogPosition = ProFileUtil.getValueFromProAbsPath(
-					posFileAbspath, slaveId + ".binlogPosition");
+			String slaveId = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.slaveid");
+			String serverhost = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.master.ip");
+			String serverPort = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.master.port");
+			String username = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.master.user");
+			String password = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mysql.master.pass");
+			MysqlConnector c = new MysqlConnector(serverhost, new Integer(serverPort), username, password);
+			String binlogfilename = ProFileUtil.getValueFromProAbsPath(posFileAbspath, slaveId + ".filenameKey");
+			String binlogPosition = ProFileUtil.getValueFromProAbsPath(posFileAbspath, slaveId + ".binlogPosition");
 			if (binlogfilename == null || binlogPosition == null) {
 				logger.info("没有输入检查点信息，从默认开始");
 				binlogfilename = "mysql-bin.000001";
@@ -121,35 +102,27 @@ public class MySQLSourceManager extends AbsManager {
 			c.reconnect();
 			MysqlConnector nc = c.clone();
 			nc.reconnect();
-			TableMetaCache tableMetaCache = new TableMetaCache(nc,
-					context.getSlaveId());
+			TableMetaCache tableMetaCache = new TableMetaCache(nc, context.getSlaveId());
 			context.setTableMetaCache(tableMetaCache);
 
 			//
-			String isMark_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "consu.ismark");
+			String isMark_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "consu.ismark");
 			Boolean isMarkDelete = new Boolean(isMark_s);
 			context.setMarkDelete(isMarkDelete);
 			//
-			String desc_ipcsv = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.seeds");
-			String desc_port_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.port");
-			String desc_username = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.user");
-			String desc_passwd = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath, "bootstrap.mongo.pass");
+			String desc_ipcsv = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.seeds");
+			String desc_port_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.port");
+			String desc_username = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.user");
+			String desc_passwd = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.pass");
+			String forcedbname = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.forcedbname");
 			Integer desc_port = new Integer(desc_port_s);
 			context.setDescMongoIpCSV(desc_ipcsv);
 			context.setDescMongoPort(desc_port);
 			context.setDescMongoUser(desc_username);
 			context.setDescMongoPass(desc_passwd);
-			String connectionsPerHost_s = ProFileUtil.findMsgString(
-					Const.sysconfigFileClasspath,
-					"bootstrap.mongo.connectionsPerHost");
-			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil
-					.findMsgString(Const.sysconfigFileClasspath,
-							"bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
+			context.setForcedbname(forcedbname);
+			String connectionsPerHost_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.connectionsPerHost");
+			String threadsAllowedToBlockForConnectionMultiplier_s = ProFileUtil.findMsgString(Const.sysconfigFileClasspath, "bootstrap.mongo.threadsAllowedToBlockForConnectionMultiplier");
 			context.setConnectionsPerHost_s(connectionsPerHost_s);
 			context.setThreadsAllowedToBlockForConnectionMultiplier_s(threadsAllowedToBlockForConnectionMultiplier_s);
 
