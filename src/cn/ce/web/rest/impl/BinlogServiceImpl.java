@@ -3,8 +3,7 @@ package cn.ce.web.rest.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.binlog.session.BinlogPBootStrap;
-import cn.ce.binlog.vo.BinParseResultVO;
+import cn.ce.binlog.manager.BootStrap;
 import cn.ce.binlog.vo.ControlBinlogXmlVO;
 import cn.ce.binlog.vo.TokenAuthRes;
 import cn.ce.cons.Const;
@@ -29,15 +28,12 @@ public class BinlogServiceImpl implements IFBinlogService {
 		return res;
 	}
 
-
-
 	public ControlBinlogXmlVO startBinlogXML() {
 		ControlBinlogXmlVO res = new ControlBinlogXmlVO();
 		try {
-			BinlogPBootStrap binlogPBootStrap = (BinlogPBootStrap) SpringUtil
-					.getBean("binlogPBootStrap");
-			binlogPBootStrap.afterPropertiesSet();
-			res.setMsgDetail("Binlog XML工程成功启动");
+			BootStrap bootStrap = (BootStrap) SpringUtil.getBean("bootStrap");
+			bootStrap.afterPropertiesSet();
+			res.setMsgDetail("Binlog 工程成功启动");
 			res.setResCode(Const.OK);
 		} catch (Throwable e) {
 			String err = e.getMessage();
@@ -51,10 +47,9 @@ public class BinlogServiceImpl implements IFBinlogService {
 	public ControlBinlogXmlVO stopBinlogXML() throws InterruptedException {
 		ControlBinlogXmlVO res = new ControlBinlogXmlVO();
 		try {
-			BinlogPBootStrap binlogPBootStrap = (BinlogPBootStrap) SpringUtil
-					.getBean("binlogPBootStrap");
-			binlogPBootStrap.destroy();
-			res.setMsgDetail("Binlog XML工程完全退出");
+			BootStrap bootStrap = (BootStrap) SpringUtil.getBean("bootStrap");
+			bootStrap.destroy();
+			res.setMsgDetail("Binlog 工程完全停止");
 			res.setResCode(Const.OK);
 		} catch (Throwable e) {
 			String err = e.getMessage();

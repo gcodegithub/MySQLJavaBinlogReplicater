@@ -22,7 +22,7 @@
 		<property name="queueSize" value="512" />
 	</bean>
 
-	<bean id="binlogPBootStrap" class="cn.ce.binlog.session.BinlogPBootStrap" />
+	<bean id="bootStrap" class="cn.ce.binlog.manager.BootStrap" />
 	<bean id="binlogServiceImpl" class="cn.ce.web.rest.impl.BinlogServiceImpl" />
 
 	<jaxrs:server id="binlogService" address="/binlog">

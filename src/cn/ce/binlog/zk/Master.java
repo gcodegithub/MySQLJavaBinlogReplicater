@@ -2,7 +2,6 @@ package cn.ce.binlog.zk;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
@@ -19,6 +18,7 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.ce.binlog.manager.AbsManager;
 import cn.ce.binlog.manager.Context;
 
 public class Master implements Watcher, Closeable {
@@ -41,55 +41,61 @@ public class Master implements Watcher, Closeable {
 	private ZooKeeper zk;
 	private volatile boolean connected = false;
 	private volatile boolean expired = false;
-	private String masterPath = this.getMasterPath();
-
-	private Watcher masterExistsWatcher = new MasterExistsWatcher(this, context);
+	private String masterPath;
+	private Watcher checkMasterExistsWatcher;
 
 	private StringCallback masterCreateCallback = new StringCallback() {
 		public void processResult(int rc, String path, Object ctx, String name) {
 			Context context = (Context) ctx;
-			String serverId = context.getSlaveId().toString();
 			switch (Code.get(rc)) {
 			case CONNECTIONLOSS:
-				checkMaster();
+				logger.info("masterCreateCallback 连接丢失，继续获取主节点信息");
+				getMasterInfo();
 				break;
 			case OK:
 				state = MasterStates.ELECTED;
-				takeLeadership();
+				logger.info("masterCreateCallback 成功上位");
+				takeLeadership(context);
 				break;
 			case NODEEXISTS:
 				state = MasterStates.NOTELECTED;
-				masterExists();
+				logger.info("masterCreateCallback 节点已存在，继续检查主节点");
+				checkMasterExists();
 				break;
 			default:
 				state = MasterStates.NOTELECTED;
 				logger.error("Something went wrong when running for master.",
 						KeeperException.create(Code.get(rc), path));
 			}
+			String projectId = context.getProjectId();
 			logger.info("I'm " + (state == MasterStates.ELECTED ? "" : "not ")
-					+ "the leader " + serverId);
+					+ "the leader,projectId:" + projectId);
 		}
 	};
 
-	private DataCallback masterCheckCallback = new DataCallback() {
+	private DataCallback getMasterInfoCallback = new DataCallback() {
 		public void processResult(int rc, String path, Object ctx, byte[] data,
 				Stat stat) {
 			Context context = (Context) ctx;
-			String serverId = context.getSlaveId().toString();
+			String projectId = context.getProjectId();
 			switch (Code.get(rc)) {
 			case CONNECTIONLOSS:
-				checkMaster();
+				logger.info("getMasterInfoCallback 连接丢失，继续获取主节点信息");
+				getMasterInfo();
 				break;
 			case NONODE:
-				runForMaster();
+				logger.info("getMasterInfoCallback 节点不存在，准备竞选");
+				createMasterInfo();
 				break;
 			case OK:
-				if (serverId.equals(new String(data))) {
+				if (projectId.equals(new String(data))) {
 					state = MasterStates.ELECTED;
-					takeLeadership();
+					logger.info("getMasterInfoCallback 节点存在，slaveId就是自己,准备上位");
+					takeLeadership(context);
 				} else {
 					state = MasterStates.NOTELECTED;
-					masterExists();
+					logger.info("getMasterInfoCallback 节点存在，slaveId不是自己,继续检查主节点");
+					checkMasterExists();
 				}
 				break;
 			default:
@@ -99,70 +105,65 @@ public class Master implements Watcher, Closeable {
 		}
 	};
 
-	private StatCallback masterExistsCallback = new StatCallback() {
+	private StatCallback checkMasterExistsCallback = new StatCallback() {
 		public void processResult(int rc, String path, Object ctx, Stat stat) {
 			switch (Code.get(rc)) {
 			case CONNECTIONLOSS:
-				masterExists();
+				logger.info("checkMasterExistsCallback 连接丢失,继续检查主节点");
+				checkMasterExists();
 				break;
 			case OK:
 				if (stat == null) {
+					logger.info("checkMasterExistsCallback 没有状态信息，准备竞选");
 					state = MasterStates.RUNNING;
-					runForMaster();
+					createMasterInfo();
 					logger.info("It sounds like the previous master is gone, "
 							+ "so let's run for master again.");
 				}
 				break;
 			default:
-				checkMaster();
+				logger.info("checkMasterExistsCallback ，准备获取主节点信息");
+				getMasterInfo();
 				break;
 			}
 		}
 	};
 
-	MasterStates getState() {
+	public MasterStates getState() {
 		return state;
 	}
 
-	Master(Context context) {
+	public Master(Context context) {
 		this.context = context;
+		this.startZK();
+		checkMasterExistsWatcher = new MasterExistsWatcher(this, context);
+		this.createMasterInfo();
+		context.setM(this);
 	}
 
 	public String getMasterPath() {
 		if (!StringUtils.isBlank(masterPath)) {
 			return masterPath;
 		}
-		String mysqlHostName = context.getC().getAddress().getHostName();
-		masterPath = "/" + mysqlHostName + "_" + "master";
+		String zkClusterId = context.getZkClusterId().trim();
+		masterPath = "/" + zkClusterId + "_" + "master";
 		return masterPath;
 	}
 
-	public void runForMaster() {
-		try {
-			this.startZK();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		String masterPath = this.getMasterPath();
-		logger.info("Running for master,masterPath in zk:" + masterPath);
-		String slaveId = context.getSlaveId().toString();
-		zk.create(masterPath, slaveId.getBytes(), Ids.OPEN_ACL_UNSAFE,
-				CreateMode.EPHEMERAL, masterCreateCallback, context);
-	}
-
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		try {
 			this.stopZK();
 		} catch (Exception e) {
-			throw new IOException(e);
+			e.printStackTrace();
+			System.err.println("关闭zk连接失败，详情参阅以上异常栈信息.");
 		}
 
 	}
 
 	@Override
 	public void process(WatchedEvent e) {
-		logger.info("Processing event: " + e.toString());
+		logger.info("called by the init zk,MasterWatcher event:" + e);
 		if (e.getType() == Event.EventType.None) {
 			switch (e.getState()) {
 			case SyncConnected:
@@ -182,50 +183,91 @@ public class Master implements Watcher, Closeable {
 
 	}
 
-	// ------------private
-	private void startZK() throws IOException, InterruptedException {
-		String zkConInfo = context.getZkConInfo();
-		if (StringUtils.isBlank(zkConInfo)) {
-			throw new RuntimeException(
-					"zookeeper connection info is null,zkConInfo:" + zkConInfo);
+	public void createMasterInfo() {
+		try {
+			this.startZK();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
+		String masterPath = this.getMasterPath();
+		logger.info("Running for master,masterPath in zk:" + masterPath);
+		String projectId = context.getProjectId();
+		logger.info("确保不同工程拥有不同projectId，projectId:" + projectId);
+		zk.create(masterPath, projectId.getBytes(), Ids.OPEN_ACL_UNSAFE,
+				CreateMode.EPHEMERAL, masterCreateCallback, context);
+	}
+
+	public boolean isExpired() {
+		return expired;
+	}
+
+	@Override
+	protected void finalize() {
+		this.close();
+	}
+
+	// ------------private
+	private void startZK() {
+
 		if (zk != null) {
 			return;
 		}
-		zk = new ZooKeeper(zkConInfo, 5000, this);
+		try {
+			String zkConInfo = context.getZkConInfo();
+			if (StringUtils.isBlank(zkConInfo)) {
+				throw new RuntimeException(
+						"zookeeper connection info is null,zkConInfo:"
+								+ zkConInfo);
+			}
+			zk = new ZooKeeper(zkConInfo, 5000, this);
+		} catch (IOException e) {
+			String err = e.getMessage();
+			e.printStackTrace();
+			throw new RuntimeException(err);
+		}
 	}
 
-	private void stopZK() throws InterruptedException, IOException {
+	private synchronized void stopZK() throws InterruptedException, IOException {
 		if (zk != null) {
 			zk.close();
+			zk = null;
 		}
-
 	}
 
-	private void checkMaster() {
+	private void getMasterInfo() {
 		String masterPath = this.getMasterPath();
-		zk.getData(masterPath, false, masterCheckCallback, context);
+		zk.getData(masterPath, false, getMasterInfoCallback, context);
 	}
 
-	private void masterExists() {
+	private void checkMasterExists() {
 		String masterPath = this.getMasterPath();
-		zk.exists(masterPath, masterExistsWatcher, masterExistsCallback,
-				context);
+		zk.exists(masterPath, checkMasterExistsWatcher,
+				checkMasterExistsCallback, context);
 	}
 
-	private void takeLeadership() {
-		logger.info("Going for list of workers");
-		//getWorkers();
-		(new RecoveredAssignments(zk)).recover(new RecoveryCallback() {
-			public void recoveryComplete(int rc, List tasks) {
-				if (rc == RecoveryCallback.FAILED) {
-					logger.error("Recovery of assigned tasks failed.");
-				} else {
-					logger.info("Assigning recovered tasks");
-					//getTasks();
-				}
-			}
-		});
+	private void takeLeadership(Context context) {
+		logger.info("成为主节点，进行业务处理");
+		// while (true) {
+		// try {
+		// Thread.sleep(100000);
+		// logger.info("成为主节点，进行业务处理,thread:" + Thread.currentThread());
+		// } catch (InterruptedException e) {
+		// e.printStackTrace();
+		// }
+		// }
+		AbsManager manager = context.getManager();
+		manager.begin();
+		// getWorkers();
+		// (new RecoveredAssignments(zk)).recover(new RecoveryCallback() {
+		// public void recoveryComplete(int rc, List tasks) {
+		// if (rc == RecoveryCallback.FAILED) {
+		// logger.error("Recovery of assigned tasks failed.");
+		// } else {
+		// logger.info("Assigning recovered tasks");
+		// // getTasks();
+		// }
+		// }
+		// });
 	}
 
 }

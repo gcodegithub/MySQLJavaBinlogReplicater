@@ -75,7 +75,7 @@ public class JDBCTest {
 
 	public static void main(String[] args) {
 		try {
-			int count = 10000;
+			int count = 50000;
 			long time1 = System.currentTimeMillis();
 			JDBCTest.insert(count);
 			long time2 = System.currentTimeMillis();

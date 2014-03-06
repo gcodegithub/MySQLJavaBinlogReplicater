@@ -202,6 +202,11 @@ public class MysqlConnector implements Cloneable {
 		return s;
 	}
 
+	@Override
+	protected void finalize() {
+		this.disconnect();
+	}
+
 	public static void main(String[] args) {
 		MysqlConnector c = null;
 		try {

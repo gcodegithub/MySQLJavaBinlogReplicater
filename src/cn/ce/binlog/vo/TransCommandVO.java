@@ -30,7 +30,7 @@ public class TransCommandVO {
 	static {
 		try {
 			String booltb = ProFileUtil.findMsgString(
-					Const.filterFileClasspath, "include.db.control");
+					Const.filterFileClasspath, "include.tb.control");
 			if (!StringUtils.isBlank(booltb)) {
 				isDoIncludeTB = Boolean.valueOf(booltb);
 				String csvtb = ProFileUtil.findMsgString(

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.bson.BSONObject;
 import org.bson.types.BSONTimestamp;
 
 import cn.ce.binlog.manager.Context;
@@ -164,6 +165,8 @@ public abstract class AbsMongoDao {
 				.getThreadsAllowedToBlockForConnectionMultiplier_s();
 		String username = ctx.getDescMongoUser();
 		String passwd = ctx.getDescMongoPass();
+		long i = System.currentTimeMillis() - System.currentTimeMillis() / 1000
+				* 1000;
 		for (Object row : source) {
 			String priKey = this.getPrimaryKey(row);
 			Object privalue = this.getPrimaryValue(row);
@@ -228,9 +231,15 @@ public abstract class AbsMongoDao {
 			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)) {
 				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
-				dbc.update(s,
-						new BasicDBObject().append("$set", dbo.get("$set")),
-						false, true, WriteConcern.SAFE);
+				DBObject up_dbo = new BasicDBObject();
+				up_dbo.put("dvs_server_ts",
+						new BSONTimestamp(
+								(int) (System.currentTimeMillis() / 1000),
+								(int) i++));
+				up_dbo.put("dvs_client_rec", System.currentTimeMillis());
+				up_dbo.putAll((BSONObject) dbo.get("$set"));
+				dbc.update(s, new BasicDBObject().append("$set", up_dbo), true,
+						true, WriteConcern.SAFE);
 			}
 
 		}// for over
@@ -263,6 +272,8 @@ public abstract class AbsMongoDao {
 		String passwd = ctx.getDescMongoPass();
 		List<Object> source = list;
 		DBCollection dbc = null;
+		long i = System.currentTimeMillis() - System.currentTimeMillis() / 1000
+				* 1000;
 		for (Object row : source) {
 			String priKey = this.getPrimaryKey(row);
 			Object privalue = this.getPrimaryValue(row);
@@ -309,12 +320,29 @@ public abstract class AbsMongoDao {
 					|| Const.INSERT.equalsIgnoreCase(dmlType)) {
 				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
-				dbc.update(s,
-						new BasicDBObject().append("$set", dbo.get("$set")),
-						true, true, WriteConcern.SAFE);
+				DBObject up_dbo = new BasicDBObject();
+				up_dbo.put("dvs_server_ts",
+						new BSONTimestamp(
+								(int) (System.currentTimeMillis() / 1000),
+								(int) i++));
+				up_dbo.put("dvs_client_rec", System.currentTimeMillis());
+				up_dbo.putAll((BSONObject) dbo.get("$set"));
+				dbc.update(s, new BasicDBObject().append("$set", up_dbo), true,
+						true, WriteConcern.SAFE);
 			}
 
 		}
 
+	}
+
+	public static void main(String[] args) {
+		Long a = System.currentTimeMillis();
+		long b = System.currentTimeMillis() / 1000 * 1000;
+		System.out.println(a);
+		System.out.println(b);
+		System.out.println(a - b);
+		int i=Integer.MAX_VALUE;
+		System.out.println(i++);
+		System.out.println(i++);
 	}
 }
