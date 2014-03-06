@@ -1,11 +1,12 @@
 ------------------------------------------------------MySQL主库
 server-id		= 1
-log_bin			= /var/log/mysql/mysql-bin.log
+log_bin			= /data/mysqldata/mysql-bin.log
 binlog-format=ROW
 innodb_flush_log_at_trx_commit=1
 sync_binlog=1
 expire_logs_days	= 1095
 max_binlog_size         = 1024M
+lower_case_table_names = 0
 
 
 ------------------------------------------------------配置文件
@@ -21,3 +22,31 @@ binlogpares.eventseri.dir
 <Context path="/expert" docBase="expert" debug="0" reloadable="false">
 
 -XX:+HeapDumpOnOutOfMemoryError -Xverify:none -Xmx2048m -Xms2048m -Xmn1024m -XX:PermSize=512m -XX:MaxPermSize=512m
+
+
+
+------------------------------------------------------MongoDB设置
+A.
+配置文件注释掉#noprealloc=true
+加入quiet=true
+
+B.
+如果知道库名称，可以在启动前预先生成预分配文件
+#!/bin/sh
+DB_NAME=$1
+cd /path/to/$DB_NAME
+for INDEX_NUMBER in {5..50}; do
+    FILE_NAME=$DB_NAME.$INDEX_NUMBER
+
+    if [ ! -e $FILE_NAME ]; then
+        head -c 2146435072 /dev/zero > $FILE_NAME
+    fi
+done
+
+C.
+启动mongodb
+echo 0 > /proc/sys/vm/zone_reclaim_mode
+numactl --interleave=all /usr/local/mongodb/bin/mongod --keyFile /data/mongodb/keyFile -f /data/mongodb/mongod.conf
+
+
+
