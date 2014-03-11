@@ -10,5 +10,9 @@ MySQLJavaBinlogReplicater
 4.配置文件在conf目录中
 5.详细部署文档参考 doc/MySQL binlog实时数据系统部署.doc （重要文档）
 
+容易出现的错误
+1.MySQL每个表必须有一个唯一主键
+2.MySQL配置binlog-format=ROW
+
 ppm10103 AT qq.com
 
