@@ -60,7 +60,7 @@ public class OplogEventConsumer extends AbsDataConsumer {
 		} finally {
 			context.setPrepareStop(true);
 			context.setConsumerThreadStop(true);
-			logger.info("---------MySQLEventConsumer持久化文件线程结束!!----------------");
+			logger.info("---------OplogEventConsumer持久化文件线程结束!!----------------");
 		}
 	}
 
