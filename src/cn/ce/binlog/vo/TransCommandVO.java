@@ -141,7 +141,7 @@ public class TransCommandVO {
 			String dbname = splitArray[0];
 			String tablename = splitArray[1];
 			String prikey = "_id";
-			ObjectId priValue = (ObjectId) value.get(prikey);
+			Object priValue = value.get(prikey);
 			String key = dbname + "." + tablename + "." + prikey + "="
 					+ priValue;
 			String optype = value.get("op").toString();
@@ -206,7 +206,8 @@ public class TransCommandVO {
 	}
 
 	private void columInfo2RowInfo(String dbname, String dmlType,
-			String tablename, int columnLen, long when,List<ColumnInfoValue> cif) {
+			String tablename, int columnLen, long when,
+			List<ColumnInfoValue> cif) {
 		int pos = 0;
 
 		for (int j = 0; j < cif.size() / columnLen; j++) {

@@ -89,8 +89,8 @@ public class OplogEventConsumer extends AbsDataConsumer {
 			if (ts == null || inc == null) {
 				continue;
 			}
-			context.setOplogtsInt(ts);
-			context.setOplogincInt(inc);
+//			context.setOplogtsInt(ts);
+//			context.setOplogincInt(inc);
 			resVo.setTimestamp(ts);
 			resVo.setInc(inc.toString());
 			// oplog更新时分为全部更新和局部更新，数据格式不同。
@@ -118,7 +118,7 @@ public class OplogEventConsumer extends AbsDataConsumer {
 
 			}
 
-			Object priValue = (ObjectId) value.get(prikey);
+			Object priValue = value.get(prikey);
 			if (priValue != null) {
 				resVo.addEventVOList(value);
 			}

@@ -263,15 +263,23 @@ public abstract class AbsMongoDao {
 	protected void normalSync2Mongodb(final java.util.ArrayList list,
 			Context ctx, Object[] params) throws Exception {
 		boolean isMark = ctx.isMarkDelete();
-		String desc_ipcsv = ctx.getDescMongoIpCSV();
-		int port = ctx.getDescMongoPort();
 		String connectionsPerHost_s = ctx.getConnectionsPerHost_s();
 		String threadsAllowedToBlockForConnectionMultiplier_s = ctx
 				.getThreadsAllowedToBlockForConnectionMultiplier_s();
+		String desc_ipcsv = ctx.getDescMongoIpCSV();
+		Integer port = ctx.getDescMongoPort();
 		String username = ctx.getDescMongoUser();
 		String passwd = ctx.getDescMongoPass();
+
+		// if src is mongodb
+		String src_ipcsv = ctx.getSourceMongoIpCSV();
+		Integer port_src = ctx.getSourceMongoPort();
+		String username_src = ctx.getSourceMongoUser();
+		String passwd_src = ctx.getSourceMongoPass();
+
 		List<Object> source = list;
 		DBCollection dbc = null;
+		DBCollection dbc_src = null;
 		long i = System.currentTimeMillis() - System.currentTimeMillis() / 1000
 				* 1000;
 		for (Object row : source) {
@@ -288,7 +296,6 @@ public abstract class AbsMongoDao {
 			dbc = MongoConnectionFactory.getMongoTBConn(desc_ipcsv, port,
 					dbname, tbname, username, passwd, connectionsPerHost_s,
 					threadsAllowedToBlockForConnectionMultiplier_s);
-
 			//
 			MongoConnectionFactory.createIndex(desc_ipcsv, port, dbname,
 					tbname, username, passwd, connectionsPerHost_s,
@@ -320,15 +327,26 @@ public abstract class AbsMongoDao {
 					|| Const.INSERT.equalsIgnoreCase(dmlType)) {
 				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
+				BSONObject set_dbo = (BSONObject) dbo.get("$set");
+				String dbname_src = this.getDbName(row, null);
+				String tbname_src = this.getTbName(row, null);
+				dbc_src = MongoConnectionFactory.getMongoTBConn(src_ipcsv,
+						port_src, dbname_src, tbname_src, username_src,
+						passwd_src, connectionsPerHost_s,
+						threadsAllowedToBlockForConnectionMultiplier_s);
+				DBObject findObj = dbc_src.findOne(s);
 				DBObject up_dbo = new BasicDBObject();
-				up_dbo.put("dvs_server_ts",
-						new BSONTimestamp(
-								(int) (System.currentTimeMillis() / 1000),
-								(int) i++));
+				up_dbo.put("dvs_server_ts", new BSONTimestamp());
 				up_dbo.put("dvs_client_rec", System.currentTimeMillis());
-				up_dbo.putAll((BSONObject) dbo.get("$set"));
-				dbc.update(s, new BasicDBObject().append("$set", up_dbo), true,
-						true, WriteConcern.SAFE);
+				if (findObj != null) {
+					up_dbo.putAll(findObj);
+				}
+				up_dbo.putAll(s);
+				up_dbo.putAll(set_dbo);
+				// dbc.update(s, new BasicDBObject().append("$set", up_dbo),
+				// true,
+				// true, WriteConcern.SAFE);
+				dbc.update(s, up_dbo, true, false, WriteConcern.SAFE);
 			}
 
 		}
@@ -341,7 +359,7 @@ public abstract class AbsMongoDao {
 		System.out.println(a);
 		System.out.println(b);
 		System.out.println(a - b);
-		int i=Integer.MAX_VALUE;
+		int i = Integer.MAX_VALUE;
 		System.out.println(i++);
 		System.out.println(i++);
 	}
