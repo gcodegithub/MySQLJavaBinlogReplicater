@@ -103,7 +103,7 @@ public class MongoDeltaInfo {
 						if (!StringUtils.isBlank(dbInfo)) {
 							context.addDbObjectQueue(dbObject);
 							this.updateContextCheckPoint(dbObject, context);
-							logger.info("取得的增量OPLOG数据:" + dbObject);
+//							logger.info("取得的增量OPLOG数据:" + dbObject);
 						}
 						// 如果存在数据，则重新定义时间。
 						noLoadcout = 0;
