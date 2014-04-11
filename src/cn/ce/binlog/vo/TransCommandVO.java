@@ -147,15 +147,15 @@ public class TransCommandVO {
 			String optype = value.get("op").toString();
 			String dmlType = null;
 			if ("i".equals(optype)) {
-				dmlType = "INSERT";
+				dmlType = Const.INSERT;
 			} else if ("u".equals(optype)) {
 				if (value.get("$set") != null) {
-					dmlType = "UPDATE_PART";
+					dmlType = Const.UPDATE_PART;
 				} else {
-					dmlType = "UPDATE";
+					dmlType = Const.UPDATE;
 				}
 			} else if ("d".equals(optype)) {
-				dmlType = "DELETE";
+				dmlType = Const.DELETE;
 			}
 			value.put("dbname", dbname);
 			value.put("dmlType", dmlType);
@@ -193,13 +193,13 @@ public class TransCommandVO {
 		String dbname = tevo.getDbname();
 		String tblname = tevo.getTblname();
 		this.setBinlogFileName(tevo.getBinfile());
-		if ("UPDATE".equals(rowDMLType)) {
+		if (Const.UPDATE.equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
 					when, afterColumnInfo);
-		} else if ("INSERT".equals(rowDMLType)) {
+		} else if (Const.INSERT.equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
 					when, afterColumnInfo);
-		} else if ("DELETE".equals(rowDMLType)) {
+		} else if (Const.DELETE.equals(rowDMLType)) {
 			this.columInfo2RowInfo(dbname, rowDMLType, tblname, columnLen,
 					when, beforeColumnInfo);
 		}

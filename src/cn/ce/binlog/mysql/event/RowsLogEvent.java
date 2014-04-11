@@ -21,6 +21,7 @@ import cn.ce.binlog.mysql.util.MySQLColumnUtil;
 import cn.ce.binlog.session.LogBuffer;
 import cn.ce.binlog.vo.EventVO;
 import cn.ce.binlog.vo.RowEventVO;
+import cn.ce.cons.Const;
 
 public abstract class RowsLogEvent extends BinlogEvent {
 
@@ -450,15 +451,15 @@ public abstract class RowsLogEvent extends BinlogEvent {
 		int type = this.getHeader().getType();
 		if (BinlogEvent.WRITE_ROWS_EVENT_V1 == type
 				|| BinlogEvent.WRITE_ROWS_EVENT == type) {
-			return "INSERT";
+			return Const.INSERT;
 		} else if (BinlogEvent.UPDATE_ROWS_EVENT_V1 == type
 				|| BinlogEvent.UPDATE_ROWS_EVENT == type) {
 
-			return "UPDATE";
+			return Const.UPDATE;
 		} else if (BinlogEvent.DELETE_ROWS_EVENT_V1 == type
 				|| BinlogEvent.DELETE_ROWS_EVENT == type) {
 
-			return "DELETE";
+			return Const.DELETE;
 		} else {
 			throw new RuntimeException("unsupport event type :"
 					+ this.getHeader().getType());

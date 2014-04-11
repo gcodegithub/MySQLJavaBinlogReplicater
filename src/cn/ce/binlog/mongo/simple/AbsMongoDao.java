@@ -151,6 +151,24 @@ public abstract class AbsMongoDao {
 		return null;
 	}
 
+	protected DBObject removeField(DBObject d, boolean isRemId) {
+		if (isRemId && d.get("_id") != null) {
+			d.removeField("_id");
+		}
+		if (d.containsField("ns"))
+			d.removeField("ns");
+		if (d.containsField("op"))
+			d.removeField("op");
+		if (d.containsField("dbname"))
+			d.removeField("dbname");
+		if (d.containsField("tbname"))
+			d.removeField("tbname");
+		if (d.containsField("dmlType"))
+			d.removeField("dmlType");
+		return d;
+
+	}
+
 	public void cutSync2Mongodb(final java.util.ArrayList list, Context ctx,
 			Object[] params) throws Exception {
 		boolean isMark = ctx.isMarkDelete();
@@ -319,12 +337,29 @@ public abstract class AbsMongoDao {
 			s.put(priKey, privalue);
 			if (Const.DELETE.equalsIgnoreCase(dmlType)) {
 				if (isMark) {
-					dbc.update(s, dbo, true, false, WriteConcern.SAFE);
+					DBObject findObj = dbc.findOne(s);
+					DBObject up_dbo = new BasicDBObject();
+					up_dbo.put("dvs_server_ts", new BSONTimestamp());
+					if(findObj!=null){
+					 findObj = removeField(findObj, true);
+					 if(findObj.containsField("dvs_server_ts")){ 
+						 findObj.removeField("dvs_server_ts");
+					 } 
+					 up_dbo.putAll(findObj);
+					}
+					up_dbo.put("dvs_client_rec", System.currentTimeMillis());
+					up_dbo.put("dvs_thread_code", dbo.get("dvs_thread_code"));
+					up_dbo.put("dvs_mysql_op_type", Const.DELETE);
+					up_dbo.put("when", this.getRecWhen(row));
+					dbc.update(s, up_dbo, true, false, WriteConcern.SAFE);
 				} else {
 					dbc.remove(s, WriteConcern.SAFE);
 				}
-			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)
-					|| Const.INSERT.equalsIgnoreCase(dmlType)) {
+			} else if (Const.UPDATE.equalsIgnoreCase(dmlType)) {
+				dbo = removeField(dbo, true);
+				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
+			} else if (Const.INSERT.equalsIgnoreCase(dmlType)) {
+				dbo = removeField(dbo, false);
 				dbc.update(s, dbo, true, false, WriteConcern.SAFE);
 			} else if (Const.UPDATE_PART.equals(dmlType)) {
 				BSONObject set_dbo = (BSONObject) dbo.get("$set");
@@ -338,14 +373,14 @@ public abstract class AbsMongoDao {
 				DBObject up_dbo = new BasicDBObject();
 				up_dbo.put("dvs_server_ts", new BSONTimestamp());
 				up_dbo.put("dvs_client_rec", System.currentTimeMillis());
+				up_dbo.put("dvs_thread_code", dbo.get("dvs_thread_code"));
+				// 部分更新到mongo中也显示位UPDATE
+				up_dbo.put("dvs_mysql_op_type", Const.UPDATE);
+				up_dbo.put("when", this.getRecWhen(row));
 				if (findObj != null) {
 					up_dbo.putAll(findObj);
 				}
-				up_dbo.putAll(s);
 				up_dbo.putAll(set_dbo);
-				// dbc.update(s, new BasicDBObject().append("$set", up_dbo),
-				// true,
-				// true, WriteConcern.SAFE);
 				dbc.update(s, up_dbo, true, false, WriteConcern.SAFE);
 			}
 
