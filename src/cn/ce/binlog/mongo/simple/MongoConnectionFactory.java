@@ -62,12 +62,6 @@ public class MongoConnectionFactory {
 			String connectionsPerHost_s,
 			String threadsAllowedToBlockForConnectionMultiplier_s,
 			String... columName2Indexs) throws Exception {
-		if (columName2Indexs != null && columName2Indexs.length == 1
-				&& "_id".equalsIgnoreCase(columName2Indexs[0])) {
-			logger.info("no need create index,columName2Indexs:"
-					+ columName2Indexs);
-			return;
-		}
 		StringBuilder muliKeyName = new StringBuilder();
 		BasicDBObject copmIndex = new BasicDBObject();
 		for (String oneName : columName2Indexs) {
@@ -80,6 +74,12 @@ public class MongoConnectionFactory {
 				+ "." + muliKeyName.toString();
 		//
 		if (indexSet.add(indexKeyName)) {
+			if (columName2Indexs != null && columName2Indexs.length == 1
+					&& "_id".equalsIgnoreCase(columName2Indexs[0])) {
+				logger.info("no need create index,columName2Indexs:"
+						+ columName2Indexs);
+				return;
+			}
 			DBCollection dbc = MongoConnectionFactory.getMongoTBConn(ipcsv,
 					port, dbname, tbname, username, passwd,
 					connectionsPerHost_s,
