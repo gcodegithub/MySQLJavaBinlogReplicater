@@ -15,10 +15,12 @@ import cn.ce.cons.Const;
 import cn.ce.utils.mail.Alarm;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.Bytes;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
+import com.mongodb.QueryBuilder;
 
 public class MongoDeltaInfo {
 	private final static Log logger = LogFactory.getLog(MongoDeltaInfo.class);
@@ -53,6 +55,26 @@ public class MongoDeltaInfo {
 		context.setOplogtsInt(ts);
 		context.setOplogincInt(inc);
 	}
+	
+	
+//	private DBCursor getDBCursor(){
+//		DBObject query = null;
+//		DBCursor cur = null;
+//		if(this.start == null){
+//			query = QueryBuilder.start("ns").is(ns).get();
+//			cur = sourceDBC.find(query);
+//			cur.addOption(Bytes.QUERYOPTION_TAILABLE);
+//			cur.addOption(Bytes.QUERYOPTION_AWAITDATA);
+//		}else{
+//			query = QueryBuilder.start("ts").greaterThan(this.start).and("ns").is(ns).get();
+//			cur = sourceDBC.find(query);
+//			cur.addOption(Bytes.QUERYOPTION_TAILABLE);
+//			cur.addOption(Bytes.QUERYOPTION_AWAITDATA);
+//			cur.addOption(Bytes.QUERYOPTION_OPLOGREPLAY);
+//		}
+//		
+//		return cur;
+//	}
 
 	/*
 	 * { "ts" : { "t" : 1294582141000, "i" : 11 }, "op" : "i", "ns" :
@@ -94,6 +116,9 @@ public class MongoDeltaInfo {
 							new BSONTimestamp(ts, inc)));
 					query.append("op", new BasicDBObject("$ne", "n"));
 					cur = oplogCollection.find(query, field);
+					cur.addOption(Bytes.QUERYOPTION_TAILABLE);
+					cur.addOption(Bytes.QUERYOPTION_AWAITDATA);
+					cur.addOption(Bytes.QUERYOPTION_OPLOGREPLAY);
 					if (cur.count() == 0) {
 						this.sleepCurrThread();
 					}
