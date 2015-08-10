@@ -210,7 +210,7 @@ public class MysqlConnector implements Cloneable {
 	public static void main(String[] args) {
 		MysqlConnector c = null;
 		try {
-			c = new MysqlConnector("localhost", 3306, "root", "qwertyuiop");
+			c = new MysqlConnector("10.12.24.215", 3306, "bossuser", "111111");
 			c.connect();
 
 		} catch (IOException e) {

@@ -83,6 +83,7 @@ public class MySQLSourceManager extends AbsManager {
 			String posFileAbspath = ProFileUtil.findMsgString(
 					Const.sysconfigFileClasspath,
 					"binlogparse.checkpoint.fullpath.file");
+			logger.info("检查点文件为："+posFileAbspath);
 			context.setBinlogcheckfile(posFileAbspath);
 			//
 			String serverhost = ProFileUtil.findMsgString(
@@ -99,6 +100,7 @@ public class MySQLSourceManager extends AbsManager {
 			MysqlConnector c = new MysqlConnector(serverhost, new Integer(
 					serverPort), username, password);
 			String slaveId = context.getSlaveId().toString();
+			logger.info("slaveId为："+slaveId);
 			String binlogfilename = ProFileUtil.getValueFromProAbsPath(
 					posFileAbspath, slaveId + ".filenameKey");
 			String binlogPosition = ProFileUtil.getValueFromProAbsPath(
