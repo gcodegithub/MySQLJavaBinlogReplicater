@@ -37,7 +37,10 @@ public class ColumnInfoValue {
 				obj = date;
 				break;
 			case Types.TIMESTAMP:
-				java.sql.Timestamp datetime = java.sql.Timestamp.valueOf(value);
+				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+				java.util.Date dateTs = df.parse(value); 
+				String time = df.format(dateTs); 
+				java.sql.Timestamp datetime = java.sql.Timestamp.valueOf(time);
 				obj = datetime;
 				break;
 			case Types.INTEGER:
@@ -153,11 +156,14 @@ public class ColumnInfoValue {
 
 	public static void main(String[] args) {
 		try {
-			String value = "2014-02-09";
+			String value = "2050-00-00 00:00:00";
 
 			// Date date = java.sql.Date.valueOf(value);
-
-			System.out.println(java.sql.Timestamp.valueOf(value));
+			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
+			java.util.Date dateTs = df.parse(value); 
+			String time = df.format(dateTs); 
+			java.sql.Timestamp datetime = java.sql.Timestamp.valueOf(time);
+			System.out.println(datetime);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
