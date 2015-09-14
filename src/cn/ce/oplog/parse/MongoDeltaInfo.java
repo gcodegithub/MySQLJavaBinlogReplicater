@@ -119,6 +119,7 @@ public class MongoDeltaInfo {
 					cur.addOption(Bytes.QUERYOPTION_TAILABLE);
 					cur.addOption(Bytes.QUERYOPTION_AWAITDATA);
 					cur.addOption(Bytes.QUERYOPTION_OPLOGREPLAY);
+					cur.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
 					if (cur.count() == 0) {
 						this.sleepCurrThread();
 					}
