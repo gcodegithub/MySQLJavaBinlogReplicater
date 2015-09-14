@@ -2,6 +2,7 @@ package cn.ce.binlog.mongo.simple;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,15 +14,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.ce.cons.Const;
 import cn.ce.utils.common.BeanUtil;
-import cn.ce.utils.common.ProFileUtil;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
 import com.mongodb.MongoException;
 import com.mongodb.MongoOptions;
 import com.mongodb.ServerAddress;
@@ -97,7 +97,13 @@ public class MongoConnectionFactory {
 
 	private static MongoClient getMongoClient(String ipcsv, int port,
 			String connectionsPerHost_s,
-			String threadsAllowedToBlockForConnectionMultiplier_s) {
+			String threadsAllowedToBlockForConnectionMultiplier_s,
+			String username, String passwd, String mongodbname) {
+		logger.info("ipcsv:" + ipcsv);
+		logger.info("port:" + port);
+		logger.info("username:" + username);
+		logger.info("passwd:" + passwd);
+		logger.info("mongodbname:" + mongodbname);
 		String dbKeyName = ipcsv + "." + port;
 		try {
 			MongoConnectionFactory.lock.lock();
@@ -110,7 +116,14 @@ public class MongoConnectionFactory {
 			for (String ip : ips) {
 				seeds.add(new ServerAddress(ip, port));
 			}
-			MongoClient mc = new MongoClient(seeds);
+			MongoClient mc = null;
+			if (StringUtils.isBlank(username)) {
+				mc = new MongoClient(seeds);
+			} else {
+				MongoCredential credential = MongoCredential.createCredential(
+						username, mongodbname, passwd.toCharArray());
+				mc = new MongoClient(seeds, Arrays.asList(credential));
+			}
 			MongoOptions opt = mc.getMongoOptions();
 			opt.setConnectionsPerHost(new Integer(connectionsPerHost_s));
 			opt.setThreadsAllowedToBlockForConnectionMultiplier(new Integer(
@@ -143,18 +156,19 @@ public class MongoConnectionFactory {
 			}
 			MongoClient mclinet = MongoConnectionFactory.getMongoClient(ipcsv,
 					port, connectionsPerHost_s,
-					threadsAllowedToBlockForConnectionMultiplier_s);
+					threadsAllowedToBlockForConnectionMultiplier_s, username,
+					passwd, mongodbname);
 			DB db = mclinet.getDB(mongodbname);
-			if (!StringUtils.isBlank(username)) {
-				boolean auth = db.authenticate(username, passwd.toCharArray());
-				if (auth) {
-					System.out.println("用户授权通过");
-				} else {
-					throw new RuntimeException("用户授权不通过,ipcsv=" + ipcsv
-							+ " dbname=" + mongodbname + " port=" + port
-							+ " username=" + username + " passwd=" + passwd);
-				}
-			}
+			// if (!StringUtils.isBlank(username)) {
+			// boolean auth = db.authenticate(username, passwd.toCharArray());
+			// if (auth) {
+			// System.out.println("用户授权通过");
+			// } else {
+			// throw new RuntimeException("用户授权不通过,ipcsv=" + ipcsv
+			// + " dbname=" + mongodbname + " port=" + port
+			// + " username=" + username + " passwd=" + passwd);
+			// }
+			// }
 			DBCollection col = db.getCollection(mongotbname);
 			col.setWriteConcern(WriteConcern.SAFE);
 			tbMap.put(tbkey, col);
