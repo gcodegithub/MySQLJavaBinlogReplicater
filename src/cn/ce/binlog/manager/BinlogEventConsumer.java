@@ -31,6 +31,7 @@ public class BinlogEventConsumer extends AbsDataConsumer {
 			while (!context.isPrepareStop()) {
 				try {
 					this.consumeFrame(context, processInfo, params);
+					
 				} catch (MongoException.Network ex) {
 					String msg = ex.getMessage();
 					ex.printStackTrace();

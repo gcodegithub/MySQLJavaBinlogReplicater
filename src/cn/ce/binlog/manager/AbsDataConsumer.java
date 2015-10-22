@@ -93,6 +93,7 @@ public abstract class AbsDataConsumer {
 						curd.syncMySQL2DB((ArrayList) list, null, null);
 					}
 					this.saveCheckPoint(resVo, context);
+					logger.debug("数据持久化成功，时间:"+System.currentTimeMillis());
 				} else {
 					context.setConsuInSleep(true);
 					Thread.sleep(5);

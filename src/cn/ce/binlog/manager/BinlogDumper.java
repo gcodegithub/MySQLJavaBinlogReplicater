@@ -34,9 +34,11 @@ public class BinlogDumper {
 			this.sendBinlogDump(c, binlogfilename, binlogPosition, slaveId);
 			while (c.isConnected() && !context.isPrepareStop()) {
 				try {
+					
 					BinlogDumpResPacket binlogDumpRes = BinlogDumper
 							.receiveBinlogDump(c);
 					BinlogDumper.genEvent(binlogDumpRes, context);
+					
 				} catch (IOException ex) {
 					String err = ex.getMessage();
 					ex.printStackTrace();
@@ -102,6 +104,7 @@ public class BinlogDumper {
 
 	private static BinlogDumpResPacket receiveBinlogDump(MysqlConnector con)
 			throws Exception {
+		logger.debug("开始接受binlog包，时间:"+System.currentTimeMillis());
 		// 第一個包
 		byte[] h = ReadWriteUtil.readBytes(con.getChannel(), 4);
 		int packetBodyLength = (h[0] & 0xFF) | ((h[1] & 0xFF) << 8)
